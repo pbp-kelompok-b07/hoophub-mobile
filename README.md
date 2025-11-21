@@ -1,4 +1,4 @@
-# hoophub_mobile
+# hoophub
 
 ## Nama Anggota Kelompok
 - Rivaldy Putra Rivly (2406351453)
@@ -11,9 +11,9 @@
 ## Deskripsi Aplikasi
 Pecinta basket, pasti tahu rasanya susah payah cari sepatu yang cocok, nyari jersey tim idola, atau bingung cari ring portable buat main bareng teman. Di tengah euforia olahraga yang makin naik daun, terutama basket, rasanya penting banget punya satu tempat khusus buat cari segala perlengkapan tanpa ribet. Dari lapangan sekolah sampai turnamen komunitas, perlengkapan yang tepat bisa jadi game changer.
 
-Dari keresahan itulah, HoopHub hadir sebagai one-stop platform buat pecinta dunia basket. Kami nggak cuma jual sepatu dan bola, tapi juga jersey kece, pelindung, ring basket portable, sampai aksesori lengkap yang bisa bikin gaya mainmu makin maksimal. Dengan katalog awal berisi ratusan produk, kamu bisa jelajahi berbagai merek.
+Dari keresahan itulah, hoophub hadir sebagai one-stop platform buat pecinta dunia basket. Kami nggak cuma jual sepatu dan bola, tapi juga jersey kece, pelindung, ring basket portable, sampai aksesori lengkap yang bisa bikin gaya mainmu makin maksimal. Dengan katalog awal berisi ratusan produk, kamu bisa jelajahi berbagai merek.
 
-HoopHub bukan sekadar toko, ini komunitas. Tempat di mana semangat main basket bertemu dengan kemudahan teknologi. Yuk, bikin permainannya makin seru, bareng HoopHub.
+hoophub bukan sekadar toko, ini komunitas. Tempat di mana semangat main basket bertemu dengan kemudahan teknologi. Yuk, bikin permainannya makin seru, bareng hoophub.
 
 ## Daftar Modul
 Wishlist
@@ -55,8 +55,11 @@ Admin:
 - Admin dapat menambahkan, mengubah, serta menghapus produk, serta mengelola stok.
 
 ## Alur pengintegrasian dengan web service untuk terhubung dengan aplikasi web yang sudah dibuat
-
-## Link APK
+-  Alur pengintegrasian web service untuk terhubung dengan aplikasi web yang sudah dibuat, kami akan melakukan beberapa hal berikut:
+1. Menambahkan package atau library `http` pada proyek agar aplikasi mobile dapat berinteraksi dengan aplikasi web.
+2. Menggunakan fitur autentikasi seperti login, register, dan logout yang telah dibuat sebelumnya agar bisa memberikan otorisasi sesuai peran pengguna, yaitu sebagai admin, user, atau guest (tidak login).
+3. Menggunakan package `pbp_django_auth` untuk mengelola cookie sehingga request yang dikirimkan ke server merupakan request yang terautentikasi dan terotorisasi.
+4. Mengimplementasikan class Catalog pada Flutter dengan memanfaatkan API dataset yang telah dibuat dan dapat diakses di `https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/`, serta memanfaatkan `https://app.quicktype.io/` untuk mengubah data JSON menjadi objek Dart yang akan digunakan untuk membentuk class Catalog di Flutter.
 
 ## Link Design
 - https://www.figma.com/design/wwBBdlglDQBOCo9OM1RAQe/Untitled?node-id=0-1&t=M3sb6RFJ55DRoEJ1-1 

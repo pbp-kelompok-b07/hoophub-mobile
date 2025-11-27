@@ -11,13 +11,13 @@ class MenuPage extends StatelessWidget {
     final request = context.read<CookieRequest>();
 
     await request.logout(
-      'http://localhost:8000/authentication/logout-flutter/',
+      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/authentication/logout-flutter/',
     );
 
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Berhasil logout')),
+      const SnackBar(content: Text('You have logged out!')),
     );
 
     // Kembali ke halaman login, reset stack
@@ -35,7 +35,7 @@ class MenuPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HoopHub Menu'),
+        title: const Text('hoophub Menu'),
         actions: [
           IconButton(
             onPressed: () => _handleLogout(context),

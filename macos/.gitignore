@@ -5,3 +5,8 @@
 # Xcode-related
 **/dgph
 **/xcuserdata/
+
+linux/flutter/
+windows/flutter/
+macos/Flutter/
+.vscode/

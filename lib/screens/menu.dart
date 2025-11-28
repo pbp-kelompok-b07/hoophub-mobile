@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/widgets/searchbar.dart';
 import 'package:hoophub_mobile/widgets/navbar.dart';
 import 'package:hoophub_mobile/constants.dart';
+import 'package:hoophub_mobile/screens/login.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -49,12 +50,23 @@ class _MenuPageState extends State<MenuPage>{
 
   Future<void> _handleLogout(BuildContext context) async {
     final request = context.read<CookieRequest>();
-    await request.logout('$baseUrl/auth/logout/');
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Berhasil logout')),
+
+    await request.logout(
+      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/authentication/logout-flutter/',
     );
-    Navigator.pop(context); // balik ke LoginPage
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You have logged out!')),
+    );
+
+    // Kembali ke halaman login, reset stack
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
   }
 
   Future<Map<String, dynamic>?> _showAnimatedProfileMenu() {

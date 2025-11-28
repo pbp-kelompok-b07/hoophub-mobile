@@ -30,7 +30,7 @@ class HoopHubApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: primaryColor).copyWith(secondary: secondaryColor,
           ),
         ),
-        home: MenuPage(),
+        home: LoginPage(),
       ),
     );
   }

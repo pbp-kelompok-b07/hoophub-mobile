@@ -42,11 +42,12 @@ class _LoginPageState extends State<LoginPage> {
     final request = context.watch<CookieRequest>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      backgroundColor: Theme.of(context).colorScheme.primary,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Card(
+            color: Colors.white,
             elevation: 8,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12.0),
@@ -57,10 +58,17 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'Login',
+                    'Sign In',
                     style: TextStyle(
                       fontSize: 24.0,
                       fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Text(
+                    'Welcome to hoophub',
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontStyle: FontStyle.normal,
                     ),
                   ),
                   const SizedBox(height: 30.0),
@@ -148,8 +156,11 @@ class _LoginPageState extends State<LoginPage> {
                       minimumSize: Size(double.infinity, 50),
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(7.0),
+                      ),
                     ),
-                    child: const Text('Login'),
+                    child: const Text('Sign In'),
                   ),
                   const SizedBox(height: 36.0),
                   GestureDetector(
@@ -162,10 +173,10 @@ class _LoginPageState extends State<LoginPage> {
                       );
                     },
                     child: Text(
-                      'Dont\'t have an account? Register',
+                      'Dont\'t have an account yet? Register Now',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.primary,
-                        fontSize: 16.0,
+                        fontSize: 14.0,
                       ),
                     ),
                   ),

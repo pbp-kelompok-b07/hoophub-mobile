@@ -21,10 +21,11 @@ class HoopHubApp extends StatelessWidget {
     return Provider<CookieRequest>(
       create: (_) => CookieRequest(),
       child: MaterialApp(
-        title: 'HoopHub Mobile',
+        title: 'hoophub',
         debugShowCheckedModeBanner: false,
         theme: ThemeData( 
           useMaterial3: true,
+          fontFamily: 'Poppins',
           // Use a Material 3 ColorScheme generated from a seed color,
           // then override secondary with our custom value.
           colorScheme: ColorScheme.fromSeed(seedColor: primaryColor).copyWith(secondary: secondaryColor,

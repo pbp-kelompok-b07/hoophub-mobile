@@ -1,19 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-
-import 'package:hoophub_mobile/constants.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 
-class CatalogPage extends StatelessWidget {
+class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key});
 
-  Future<List<Product>> _fetchProducts(BuildContext context) async {
+  @override
+  State<CatalogPage> createState() => _CatalogPageState();
+}
+
+class _CatalogPageState extends State<CatalogPage> {
+  late Future<List<Product>> _futureProducts;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _futureProducts = _fetchProducts();
+  }
+
+  Future<List<Product>> _fetchProducts() async {
     final request = context.read<CookieRequest>();
 
-    // Sesuaikan path endpoint JSON katalog di Django.
-    // Misal: /json/ atau /catalog/json/
-    final response = await request.get('$baseUrl/json/');
+    final response = await request.get(
+      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
+    );
 
     final List<Product> products = [];
     for (final item in response) {
@@ -26,10 +38,10 @@ class CatalogPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('HoopHub Catalog'),
+        title: const Text('hoophub Catalog'),
       ),
       body: FutureBuilder<List<Product>>(
-        future: _fetchProducts(context),
+        future: _futureProducts,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -47,91 +59,121 @@ class CatalogPage extends StatelessWidget {
             );
           }
 
-          final products = snapshot.data!;
+          final allProducts = snapshot.data!;
+          final filtered = allProducts.where((p) {
+            if (_searchQuery.isEmpty) return true;
+            final q = _searchQuery.toLowerCase();
+            return p.name.toLowerCase().contains(q) ||
+                p.brand.toLowerCase().contains(q);
+          }).toList();
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.65,
-            ),
-            itemCount: products.length,
-            itemBuilder: (context, index) {
-              final p = products[index];
-              return Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(p.name)),
-                    );
+          return Column(
+            children: [
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Cari produk atau merek',
+                    prefixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
                   },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(16),
-                          ),
-                          child: p.imageUrl.isNotEmpty
-                              ? Image.network(
-                                  p.imageUrl,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  errorBuilder: (_, __, ___) =>
-                                      const Center(child: Icon(Icons.image)),
-                                )
-                              : const Center(child: Icon(Icons.image)),
-                        ),
+                ),
+              ),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.65,
+                  ),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final p = filtered[index];
+                    return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(8),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(p.name)),
+                          );
+                        },
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              p.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16),
+                                ),
+                                child: p.imageUrl.isNotEmpty
+                                    ? Image.network(
+                                        p.imageUrl,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        errorBuilder: (_, __, ___) =>
+                                            const Center(
+                                                child: Icon(Icons.image)),
+                                      )
+                                    : const Center(child: Icon(Icons.image)),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              p.brand,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    p.brand,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Rp ${p.price}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Stok: ${p.stock}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ],
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Rp ${p.price}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Stok: ${p.stock}',
-                              style: const TextStyle(fontSize: 12),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),

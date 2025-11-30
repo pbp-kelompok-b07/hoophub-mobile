@@ -19,31 +19,41 @@ class Product {
     required this.stock,
   });
 
+  static int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      // kalau pakai titik/koma pemisah, bisa dibersihin dulu
+      final cleaned = value.replaceAll('.', '').replaceAll(',', '');
+      return int.tryParse(cleaned) ?? 0;
+    }
+    return 0;
+  }
+
   factory Product.fromJson(Map<String, dynamic> json) {
-    // Asumsi format JSON dari Django pakai serializers:
-    // {
-    //   "pk": 1,
-    //   "fields": {
-    //     "name": "...",
-    //     "description": "...",
-    //     "price": 100000,
-    //     "image_url": "https://...",
-    //     "brand": "...",
-    //     "category": "...",
-    //     "stock": 10
-    //   }
-    // }
-    final fields = json['fields'] as Map<String, dynamic>;
+    // Bisa dua bentuk:
+    // 1) { "pk": 1, "fields": { ... } }
+    // 2) { "id": 1, "name": "...", ... }
+
+    final Map<String, dynamic> fields;
+    if (json['fields'] != null && json['fields'] is Map<String, dynamic>) {
+      fields = json['fields'] as Map<String, dynamic>;
+    } else {
+      fields = json;
+    }
+
+    final dynamic idValue = json['pk'] ?? json['id'] ?? fields['id'];
 
     return Product(
-      id: json['pk'] as int,
+      id: _toInt(idValue),
       name: fields['name'] as String? ?? '',
       description: fields['description'] as String? ?? '',
-      price: fields['price'] as int? ?? 0,
+      price: _toInt(fields['price']),
       imageUrl: fields['image_url'] as String? ?? '',
       brand: fields['brand'] as String? ?? '',
       category: fields['category'] as String? ?? '',
-      stock: fields['stock'] as int? ?? 0,
+      stock: _toInt(fields['stock']),
     );
   }
 }

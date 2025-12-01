@@ -5,7 +5,6 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/widgets/searchbar.dart';
 import 'package:hoophub_mobile/widgets/navbar.dart';
-import 'package:hoophub_mobile/constants.dart';
 import 'package:hoophub_mobile/screens/login.dart';
 import 'package:hoophub_mobile/catalog/screens/catalog_page.dart';
 
@@ -39,13 +38,13 @@ class _MenuPageState extends State<MenuPage> {
       _DashboardContent(
         handleLogout: _handleLogout,
         goToWishlistTab: _goToWishlistTab,
-      ), // 0: Dashboard
-      const CatalogPage(), // 1: Shop / Catalog
-      const Center(child: Text("Wishlist Page", style: TextStyle(fontSize: 30))), // 2
-      const Center(child: Text("Cart Page", style: TextStyle(fontSize: 30))), // 3
-      const Center(child: Text("Invoice Page", style: TextStyle(fontSize: 30))), // 4
-      const ReviewEntryListPage(), // 5
-      const Center(child: Text("Report Page", style: TextStyle(fontSize: 30))), // 6
+      ),
+      const CatalogPage(),
+      const Center(child: Text("Wishlist Page", style: TextStyle(fontSize: 30))),
+      const Center(child: Text("Cart Page", style: TextStyle(fontSize: 30))),
+      const Center(child: Text("Invoice Page", style: TextStyle(fontSize: 30))),
+      const ReviewEntryListPage(),
+      const Center(child: Text("Report Page", style: TextStyle(fontSize: 30))),
     ];
   }
 
@@ -53,7 +52,7 @@ class _MenuPageState extends State<MenuPage> {
     final request = context.read<CookieRequest>();
 
     await request.logout(
-      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/authentication/logout-flutter/',
+      'http://localhost:8000/authentication/logout-flutter/',
     );
 
     if (!context.mounted) return;

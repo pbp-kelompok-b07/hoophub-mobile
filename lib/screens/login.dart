@@ -109,7 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                       String password = _passwordController.text;
 
                       final response = await request.login(
-                        "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/authentication/login-flutter/",
+                        'http://localhost:8000/authentication/login-flutter/',
                         {'username': username, 'password': password},
                       );
 
@@ -120,7 +120,7 @@ class _LoginPageState extends State<LoginPage> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => MenuPage(),
+                              builder: (context) => const MenuPage(),
                             ),
                           );
                           ScaffoldMessenger.of(context)
@@ -153,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
                     },
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
-                      minimumSize: Size(double.infinity, 50),
+                      minimumSize: const Size(double.infinity, 50),
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       shape: RoundedRectangleBorder(

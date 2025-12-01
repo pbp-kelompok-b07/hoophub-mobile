@@ -24,17 +24,22 @@ class Product {
     if (value is int) return value;
     if (value is double) return value.toInt();
     if (value is String) {
-      // kalau pakai titik/koma pemisah, bisa dibersihin dulu
       final cleaned = value.replaceAll('.', '').replaceAll(',', '');
       return int.tryParse(cleaned) ?? 0;
     }
     return 0;
   }
 
+  static String _clean(String? value) {
+    if (value == null) return '';
+    var s = value.trim();
+    if (s.length >= 2 && s.startsWith('"') && s.endsWith('"')) {
+      s = s.substring(1, s.length - 1);
+    }
+    return s;
+  }
+
   factory Product.fromJson(Map<String, dynamic> json) {
-    // Bisa dua bentuk:
-    // 1) { "pk": 1, "fields": { ... } }
-    // 2) { "id": 1, "name": "...", ... }
 
     final Map<String, dynamic> fields;
     if (json['fields'] != null && json['fields'] is Map<String, dynamic>) {
@@ -47,12 +52,14 @@ class Product {
 
     return Product(
       id: _toInt(idValue),
-      name: fields['name'] as String? ?? '',
-      description: fields['description'] as String? ?? '',
+      name: _clean(fields['name'] as String?),
+      description: _clean(fields['description'] as String?),
       price: _toInt(fields['price']),
-      imageUrl: fields['image_url'] as String? ?? '',
-      brand: fields['brand'] as String? ?? '',
-      category: fields['category'] as String? ?? '',
+      imageUrl: _clean(
+        (fields['image_url'] ?? fields['image']) as String?,
+      ),
+      brand: _clean(fields['brand'] as String?),
+      category: _clean(fields['category'] as String?),
       stock: _toInt(fields['stock']),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
+import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
 
 class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key});
@@ -24,7 +25,7 @@ class _CatalogPageState extends State<CatalogPage> {
     final request = context.read<CookieRequest>();
 
     final response = await request.get(
-      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
+      'http://localhost:8000/catalog/json/',//'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
     );
 
     final List<Product> products = [];
@@ -49,13 +50,13 @@ class _CatalogPageState extends State<CatalogPage> {
 
           if (snapshot.hasError) {
             return Center(
-              child: Text('Terjadi error: ${snapshot.error}'),
+              child: Text('Error: ${snapshot.error}'),
             );
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
-              child: Text('Belum ada produk.'),
+              child: Text('No Product'),
             );
           }
 
@@ -74,7 +75,7 @@ class _CatalogPageState extends State<CatalogPage> {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: TextField(
                   decoration: const InputDecoration(
-                    labelText: 'Cari produk atau merek',
+                    labelText: 'Find the product!',
                     prefixIcon: Icon(Icons.search),
                     border: OutlineInputBorder(),
                   ),
@@ -106,8 +107,11 @@ class _CatalogPageState extends State<CatalogPage> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(p.name)),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProductDetailPage(product: p),
+                            ),
                           );
                         },
                         child: Column(

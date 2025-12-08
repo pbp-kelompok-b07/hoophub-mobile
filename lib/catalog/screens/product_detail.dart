@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
+import 'package:hoophub_mobile/review/screens/review_create_page.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final Product product;
@@ -214,6 +215,13 @@ class _ProductInfoSection extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Go to review page.'),
+                  ),
+                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    // 'builder' yang akan membuat instance halaman tujuan
+                    builder: (context) => ReviewCreatePage(productId: p.id),
                   ),
                 );
               },

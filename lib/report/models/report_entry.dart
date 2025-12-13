@@ -16,9 +16,9 @@ class ReportEntry {
     String description;
     String createdAt;
     String updatedAt;
-    Reporte reporter;
-    Reporte reportedUser;
-    ReportedProduct reportedProduct;
+    ReportedUser reporter;
+    ReportedUser? reportedUser;
+    ReportedProduct? reportedProduct;
 
     ReportEntry({
         required this.id,
@@ -29,22 +29,29 @@ class ReportEntry {
         required this.createdAt,
         required this.updatedAt,
         required this.reporter,
-        required this.reportedUser,
-        required this.reportedProduct,
+        this.reportedUser,
+        this.reportedProduct,
     });
+    factory ReportEntry.fromJson(Map<String, dynamic> json) {
+      return ReportEntry(
+        id: json['id'],
+        reportType: json['report_type'],
+        status: json['status'],
+        title: json['title'],
+        description: json['description'],
+        createdAt: json['created_at'],
+        updatedAt: json['updated_at'],
+        reporter: ReportedUser.fromJson(json['reporter']),
 
-    factory ReportEntry.fromJson(Map<String, dynamic> json) => ReportEntry(
-        id: json["id"],
-        reportType: json["report_type"],
-        status: json["status"],
-        title: json["title"],
-        description: json["description"],
-        createdAt: json["created_at"],
-        updatedAt: json["updated_at"],
-        reporter: Reporte.fromJson(json["reporter"]),
-        reportedUser: Reporte.fromJson(json["reported_user"]),
-        reportedProduct: ReportedProduct.fromJson(json["reported_product"]),
-    );
+        reportedUser: json['reported_user'] != null
+            ? ReportedUser.fromJson(json['reported_user'])
+            : null,
+
+        reportedProduct: json['reported_product'] != null
+            ? ReportedProduct.fromJson(json['reported_product'])
+            : null,
+      );
+    }
 
     Map<String, dynamic> toJson() => {
         "id": id,
@@ -55,8 +62,8 @@ class ReportEntry {
         "created_at": createdAt,
         "updated_at": updatedAt,
         "reporter": reporter.toJson(),
-        "reported_user": reportedUser.toJson(),
-        "reported_product": reportedProduct.toJson(),
+        "reported_user": reportedUser?.toJson(),
+        "reported_product": reportedProduct?.toJson(),
     };
 }
 
@@ -88,16 +95,16 @@ class ReportedProduct {
     };
 }
 
-class Reporte {
+class ReportedUser {
     int? id;
     String? username;
 
-    Reporte({
+    ReportedUser({
         required this.id,
         required this.username,
     });
 
-    factory Reporte.fromJson(Map<String, dynamic> json) => Reporte(
+    factory ReportedUser.fromJson(Map<String, dynamic> json) => ReportedUser(
         id: json["id"],
         username: json["username"],
     );

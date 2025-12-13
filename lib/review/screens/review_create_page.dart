@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hoophub_mobile/review/screens/review_entry_list.dart';
 import 'dart:convert';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +25,10 @@ class _ReviewCreatePageState extends State<ReviewCreatePage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text('Write your review!'), backgroundColor: Colors.white,),
+      appBar: AppBar(
+        title: const Text('Write your review!'),
+        backgroundColor: Colors.white,
+      ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -70,7 +74,9 @@ class _ReviewCreatePageState extends State<ReviewCreatePage> {
                           IconButton(
                             icon: Icon(
                               Icons.star,
-                              color: i < _rating ? const Color(0xFFEE9B00) : Colors.grey[300],
+                              color: i < _rating
+                                  ? const Color(0xFFEE9B00)
+                                  : Colors.grey[300],
                               size: 30,
                             ),
                             onPressed: () {
@@ -81,11 +87,14 @@ class _ReviewCreatePageState extends State<ReviewCreatePage> {
                           ),
                       ],
                     ),
-                    
+
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFFEE9B00),
-                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 20,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -107,26 +116,29 @@ class _ReviewCreatePageState extends State<ReviewCreatePage> {
                                   content: Text("Review created successfully!"),
                                 ),
                               );
-                              Navigator.pop(context, true);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => ReviewEntryListPage()),
+                              );
+                              // Navigator.pop(context, true);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    response['message'] ?? "Failed to create new review.",
+                                    response['message'] ??
+                                        "Failed to create new review.",
                                   ),
                                 ),
                               );
                             }
                           }
-                        }
-                        else if (_rating == 0) {
-                          setState(() {
-                            
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text("Please provide a rating!"), 
-                            backgroundColor: Colors.red,
-                            )
+                        } else if (_rating == 0) {
+                          setState(() {});
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please provide a rating!"),
+                              backgroundColor: Colors.red,
+                            ),
                           );
                         }
                       },

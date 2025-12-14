@@ -4,6 +4,7 @@ import 'package:hoophub_mobile/review/models/review_entry.dart' as review_data;
 import 'package:hoophub_mobile/review/screens/review_create_page.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:hoophub_mobile/report/screens/report_create_page.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final Product product;
@@ -82,8 +83,11 @@ class ProductDetailPage extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Report sent.')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReportCreatePage(productId: p.id),
+                      ),
                     );
                   },
                   icon: const Icon(

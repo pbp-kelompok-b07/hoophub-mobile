@@ -116,11 +116,11 @@ class _ReviewCreatePageState extends State<ReviewCreatePage> {
                                   content: Text("Review created successfully!"),
                                 ),
                               );
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => ReviewEntryListPage()),
-                              );
-                              // Navigator.pop(context, true);
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(builder: (context) => ReviewEntryListPage()),
+                              // );
+                              Navigator.pop(context, true);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

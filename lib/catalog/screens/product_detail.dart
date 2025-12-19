@@ -4,15 +4,26 @@ import 'package:hoophub_mobile/review/models/review_entry.dart' as review_data;
 import 'package:hoophub_mobile/review/screens/review_create_page.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:hoophub_mobile/report/screens/report_create_page.dart';
 
-class ProductDetailPage extends StatelessWidget {
+class ProductDetailPage extends StatefulWidget {
   final Product product;
 
   const ProductDetailPage({super.key, required this.product});
 
   @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage> {
+  void _refreshReviews() {
+    setState(() {
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final p = product;
+    final p = widget.product;
     final bool inStock = p.stock > 0;
 
     return Scaffold(
@@ -56,6 +67,7 @@ class ProductDetailPage extends StatelessWidget {
                           child: _ProductInfoSection(
                             product: p,
                             inStock: inStock,
+                            refreshTrigger: _refreshReviews,
                           ),
                         ),
                       ],
@@ -66,7 +78,11 @@ class ProductDetailPage extends StatelessWidget {
                     children: [
                       _ProductImageCard(imageUrl: p.imageUrl),
                       const SizedBox(height: 16),
-                      _ProductInfoSection(product: p, inStock: inStock),
+                      _ProductInfoSection(
+                        product: p,
+                        inStock: inStock,
+                        refreshTrigger: _refreshReviews,
+                      ),
                     ],
                   );
                 },
@@ -82,8 +98,11 @@ class ProductDetailPage extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Report sent.')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReportCreatePage(productId: p.id),
+                      ),
                     );
                   },
                   icon: const Icon(
@@ -138,8 +157,13 @@ class _ProductImageCard extends StatelessWidget {
 class _ProductInfoSection extends StatelessWidget {
   final Product product;
   final bool inStock;
+  final VoidCallback refreshTrigger;
 
-  const _ProductInfoSection({required this.product, required this.inStock});
+  const _ProductInfoSection({
+    required this.product,
+    required this.inStock,
+    required this.refreshTrigger,
+  });
 
   Future<List<review_data.ReviewEntry>> fetchReviews(
     CookieRequest request,
@@ -225,13 +249,14 @@ class _ProductInfoSection extends StatelessWidget {
         Row(
           children: [
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ReviewCreatePage(productId: p.id),
                   ),
                 );
+                refreshTrigger();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFA000),
@@ -288,6 +313,9 @@ class _ProductInfoSection extends StatelessWidget {
             if (snapshot.data == null) {
               return const Center(child: CircularProgressIndicator());
             } else {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return Text(
                   'No reviews yet.',

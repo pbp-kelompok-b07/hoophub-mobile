@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hoophub_mobile/cart/screens/cart_page.dart';
 import 'package:hoophub_mobile/review/screens/review_entry_list.dart';
+import 'package:hoophub_mobile/report/screens/report_entry_list.dart';
 import 'package:http/http.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -45,7 +46,7 @@ class _MenuPageState extends State<MenuPage> {
       const CartPage(),
       const Center(child: Text("Invoice Page", style: TextStyle(fontSize: 30))),
       const ReviewEntryListPage(),
-      const Center(child: Text("Report Page", style: TextStyle(fontSize: 30))),
+      const ReportEntryListPage(),
     ];
   }
 

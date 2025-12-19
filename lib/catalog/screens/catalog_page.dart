@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
 import 'package:hoophub_mobile/catalog/screens/add_product_page.dart.dart';
+import 'dart:convert';
 
 class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key});
@@ -36,37 +37,53 @@ class _CatalogPageState extends State<CatalogPage> {
     return products;
   }
 
-  @override
-Widget build(BuildContext context) {
-  final request = context.watch<CookieRequest>();
-  final dynamic rawUsername = request.jsonData['username'];
-  final String username =
-      rawUsername is String ? rawUsername : (rawUsername ?? '').toString();
-  final bool isAdmin = username.toLowerCase() == 'admin';
+  Future<void> _addToCart(CookieRequest request, int productId) async {
+    final response = await request.post(
+      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/cart/add-flutter/$productId/',
+      jsonEncode({"quantity": 1}),
+    );
 
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('hoophub Catalog'),
-    ),
-    floatingActionButton: isAdmin
-        ? FloatingActionButton.extended(
-            onPressed: () async {
-              final created = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddProductPage(),
-                ),
-              );
-              if (created == true) {
-                setState(() {
-                  _futureProducts = _fetchProducts();
-                });
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add Product'),
-          )
-        : null,
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Berhasil ditambahkan ke keranjang!"),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+    final dynamic rawUsername = request.jsonData['username'];
+    final String username =
+        rawUsername is String ? rawUsername : (rawUsername ?? '').toString();
+    final bool isAdmin = username.toLowerCase() == 'admin';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('hoophub Catalog'),
+      ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AddProductPage(),
+                  ),
+                );
+                if (created == true) {
+                  setState(() {
+                    _futureProducts = _fetchProducts();
+                  });
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Add Product'),
+            )
+          : null,
 
       // ----------------------------------
 
@@ -123,7 +140,7 @@ Widget build(BuildContext context) {
                     crossAxisCount: 2,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 0.65,
+                    childAspectRatio: 0.60,
                   ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
@@ -184,20 +201,52 @@ Widget build(BuildContext context) {
                                       color: Colors.grey,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Rp ${p.price}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Stok: ${p.stock}',
-                                    style: const TextStyle(fontSize: 12),
+                                  const SizedBox(height: 8),
+                                  
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Rp ${p.price}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Stok: ${p.stock}',
+                                            style: const TextStyle(fontSize: 11),
+                                          ),
+                                        ],
+                                      ),
+                                      
+                                      Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () async {
+                                            await _addToCart(request, p.id);
+                                          },
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFEE9B00),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.shopping_cart_outlined,
+                                              color: Colors.white,
+                                              size: 20,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    ],
                                   ),
 
-                                  // --- tambahan: strip kecil admin di card ---
                                   if (isAdmin) ...[
                                     const SizedBox(height: 6),
                                     Row(

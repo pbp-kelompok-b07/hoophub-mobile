@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:hoophub_mobile/cart/models/cart_entry.dart';
 import 'package:hoophub_mobile/cart/widgets/cart_item_card.dart';
-import 'package:hoophub_mobile/screens/menu.dart';
 import 'package:hoophub_mobile/catalog/screens/catalog_page.dart';
 
 class CartPage extends StatefulWidget {

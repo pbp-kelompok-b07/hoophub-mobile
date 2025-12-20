@@ -20,7 +20,7 @@ class CustomBottomNavBar extends StatelessWidget {
     // mencakup area padding tambahan.
     return Container(
       // [PERUBAHAN]: Tambahkan padding internal di sini untuk memperlebar kotak ke bawah
-      padding: const EdgeInsets.only(bottom: 12.0), 
+      padding: const EdgeInsets.only(bottom: 5.0), 
       decoration: const BoxDecoration(
         color: Colors.white, // Atur latar belakang Container agar padding ikut berwarna
         boxShadow: [

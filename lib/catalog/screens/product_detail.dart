@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
+import 'package:hoophub_mobile/review/models/review_entry.dart' as review_data;
+import 'package:hoophub_mobile/review/screens/review_create_page.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:hoophub_mobile/report/screens/report_create_page.dart';
 
-class ProductDetailPage extends StatelessWidget {
+class ProductDetailPage extends StatefulWidget {
   final Product product;
 
-  const ProductDetailPage({
-    super.key,
-    required this.product,
-  });
+  const ProductDetailPage({super.key, required this.product});
+
+  @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage> {
+  void _refreshReviews() {
+    setState(() {
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final p = product;
+    final p = widget.product;
     final bool inStock = p.stock > 0;
 
     return Scaffold(
@@ -55,6 +67,7 @@ class ProductDetailPage extends StatelessWidget {
                           child: _ProductInfoSection(
                             product: p,
                             inStock: inStock,
+                            refreshTrigger: _refreshReviews,
                           ),
                         ),
                       ],
@@ -68,6 +81,7 @@ class ProductDetailPage extends StatelessWidget {
                       _ProductInfoSection(
                         product: p,
                         inStock: inStock,
+                        refreshTrigger: _refreshReviews,
                       ),
                     ],
                   );
@@ -84,9 +98,10 @@ class ProductDetailPage extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Report sent.'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReportCreatePage(productId: p.id),
                       ),
                     );
                   },
@@ -112,10 +127,7 @@ class ProductDetailPage extends StatelessWidget {
 class _ProductImageCard extends StatelessWidget {
   final String imageUrl;
 
-  const _ProductImageCard({
-    required this.imageUrl,
-  });
-
+  const _ProductImageCard({required this.imageUrl});
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
@@ -145,33 +157,56 @@ class _ProductImageCard extends StatelessWidget {
 class _ProductInfoSection extends StatelessWidget {
   final Product product;
   final bool inStock;
+  final VoidCallback refreshTrigger;
 
   const _ProductInfoSection({
     required this.product,
     required this.inStock,
+    required this.refreshTrigger,
   });
+
+  Future<List<review_data.ReviewEntry>> fetchReviews(
+    CookieRequest request,
+  ) async {
+    try {
+      final response = await request.get(
+        'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/review/json-all-flutter/',
+      );
+
+      var data = response;
+
+      List<review_data.ReviewEntry> listReviews = [];
+      for (var d in data) {
+        if (d != null) {
+          var entry = review_data.ReviewEntry.fromJson(d);
+          if (entry.product.id == product.id) {
+            listReviews.add(entry);
+          }
+        }
+      }
+      return listReviews;
+    } catch (e) {
+      print("fetch error: $e");
+      return [];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = product;
+    final request = context.watch<CookieRequest>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           p.name,
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 4),
         Text(
           '${p.brand} • ${p.category}',
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.grey,
-          ),
+          style: const TextStyle(fontSize: 13, color: Colors.grey),
         ),
         const SizedBox(height: 12),
         Text(
@@ -188,14 +223,18 @@ class _ProductInfoSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: inStock ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
+                color: inStock
+                    ? const Color(0xFFE8F5E9)
+                    : const Color(0xFFFFEBEE),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 inStock ? 'Available' : 'Out of stock',
                 style: TextStyle(
                   fontSize: 12,
-                  color: inStock ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+                  color: inStock
+                      ? const Color(0xFF2E7D32)
+                      : const Color(0xFFC62828),
                 ),
               ),
             ),
@@ -210,18 +249,22 @@ class _ProductInfoSection extends StatelessWidget {
         Row(
           children: [
             ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Go to review page.'),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReviewCreatePage(productId: p.id),
                   ),
                 );
+                refreshTrigger();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFA000),
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -232,9 +275,7 @@ class _ProductInfoSection extends StatelessWidget {
             TextButton.icon(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Added to wishlist.'),
-                  ),
+                  const SnackBar(content: Text('Added to wishlist.')),
                 );
               },
               icon: Icon(
@@ -243,9 +284,7 @@ class _ProductInfoSection extends StatelessWidget {
               ),
               label: Text(
                 'Add to wishlist',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
             ),
           ],
@@ -253,10 +292,7 @@ class _ProductInfoSection extends StatelessWidget {
         const SizedBox(height: 24),
         const Text(
           'Description',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         Text(
@@ -268,15 +304,89 @@ class _ProductInfoSection extends StatelessWidget {
         const SizedBox(height: 24),
         const Text(
           'Reviews',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
-        const Text(
-          'No reviews yet.',
-          style: TextStyle(fontSize: 13, color: Colors.grey),
+        FutureBuilder(
+          future: fetchReviews(request),
+          builder: (context, AsyncSnapshot snapshot) {
+            if (snapshot.data == null) {
+              return const Center(child: CircularProgressIndicator());
+            } else {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Text(
+                  'No reviews yet.',
+                  style: TextStyle(fontSize: 14, color: Colors.black),
+                );
+              } else {
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: snapshot.data!.length,
+                  itemBuilder: (context, index) {
+                    final review = snapshot.data![index];
+                    return Card(
+                      color: Colors.white,
+                      elevation: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.all(0.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              review.user,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+
+                            Text(
+                              review.date,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    for (int i = 0; i < 5; i++)
+                                      Icon(
+                                        Icons.star,
+                                        color: i < review.rating
+                                            ? const Color(0xFFEE9B00)
+                                            : Colors.grey[300],
+                                        size: 20,
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 6),
+                            Text(
+                              review.review,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+            }
+          },
         ),
       ],
     );

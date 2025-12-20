@@ -44,70 +44,60 @@ class _InvoiceListPageState extends State<InvoiceListPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      // Kita bungkus body dengan RefreshIndicator agar bisa pull-to-refresh
       body: RefreshIndicator(
         onRefresh: () async {
-          refreshPage();
+          setState(() {});
         },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-               // Jarak aman dari atas (Status Bar)
-              const SizedBox(height: 40), 
-
-              // --- HEADER SESUAI GAMBAR ---
-              const Text(
-                "Track your past orders!",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+        child: LayoutBuilder( // 1. Tambahkan LayoutBuilder untuk mendapatkan tinggi layar
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                // 2. Paksa tinggi minimal agar sama dengan tinggi layar (constraints.maxHeight)
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center, // 3. Sekarang ini akan berfungsi
+                  children: [
+                    FutureBuilder(
+                      future: fetchInvoices(request),
+                      builder: (context, AsyncSnapshot snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          // Hilangkan Padding top 100 karena sudah ada MainAxisAlignment.center
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text("Error: ${snapshot.error}"));
+                        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return Center(
+                            child: Column(
+                              children: const [
+                                Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+                                SizedBox(height: 16),
+                                Text('No invoice yet.',
+                                    style: TextStyle(fontSize: 16, color: Colors.grey)),
+                              ],
+                            ),
+                          );
+                        } else {
+                          List<InvoiceEntry> invoices = snapshot.data as List<InvoiceEntry>;
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: invoices.length,
+                            itemBuilder: (_, index) => Padding(
+                              padding: const EdgeInsets.only(bottom: 24.0, left: 16, right: 16),
+                              child: OrderCard(entry: invoices[index]),
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    // SizedBox ini tetap ada untuk memberi ruang di bawah list
+                    const SizedBox(height: 60),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              const DashedLineSeparator(),
-              const SizedBox(height: 32),
-              // ----------------------------
-
-              // --- FUTURE BUILDER ---
-              FutureBuilder(
-                future: fetchInvoices(request),
-                builder: (context, AsyncSnapshot snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text("Error: ${snapshot.error}"));
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'You have no orders yet.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    );
-                  } else {
-                    List<InvoiceEntry> invoices = snapshot.data as List<InvoiceEntry>;
-                    
-                    // Menampilkan list order card
-                    return ListView.builder(
-                      // ShrinkWrap true agar ListView bisa berada di dalam SingleChildScrollView
-                      shrinkWrap: true, 
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: invoices.length,
-                      itemBuilder: (_, index) => Padding(
-                        padding: const EdgeInsets.only(bottom: 24.0),
-                        child: OrderCard(entry: invoices[index]),
-                      ),
-                    );
-                  }
-                },
-              ),
-              // Padding bawah agar tidak tertutup navbar
-              const SizedBox(height: 60),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

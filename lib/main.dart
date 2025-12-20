@@ -26,8 +26,6 @@ class HoopHubApp extends StatelessWidget {
         theme: ThemeData( 
           useMaterial3: true,
           fontFamily: 'Poppins',
-          // Use a Material 3 ColorScheme generated from a seed color,
-          // then override secondary with our custom value.
           colorScheme: ColorScheme.fromSeed(seedColor: primaryColor).copyWith(secondary: secondaryColor,
           ),
         ),

@@ -3,6 +3,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
+import 'package:hoophub_mobile/catalog/screens/add_product_page.dart.dart';
 
 class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key});
@@ -25,7 +26,7 @@ class _CatalogPageState extends State<CatalogPage> {
     final request = context.read<CookieRequest>();
 
     final response = await request.get(
-      'http://localhost:8000/catalog/json/',//'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
+      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
     );
 
     final List<Product> products = [];
@@ -36,11 +37,39 @@ class _CatalogPageState extends State<CatalogPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('hoophub Catalog'),
-      ),
+Widget build(BuildContext context) {
+  final request = context.watch<CookieRequest>();
+  final dynamic rawUsername = request.jsonData['username'];
+  final String username =
+      rawUsername is String ? rawUsername : (rawUsername ?? '').toString();
+  final bool isAdmin = username.toLowerCase() == 'admin';
+
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('hoophub Catalog'),
+    ),
+    floatingActionButton: isAdmin
+        ? FloatingActionButton.extended(
+            onPressed: () async {
+              final created = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AddProductPage(),
+                ),
+              );
+              if (created == true) {
+                setState(() {
+                  _futureProducts = _fetchProducts();
+                });
+              }
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add Product'),
+          )
+        : null,
+
+      // ----------------------------------
+
       body: FutureBuilder<List<Product>>(
         future: _futureProducts,
         builder: (context, snapshot) {
@@ -167,6 +196,53 @@ class _CatalogPageState extends State<CatalogPage> {
                                     'Stok: ${p.stock}',
                                     style: const TextStyle(fontSize: 12),
                                   ),
+
+                                  // --- tambahan: strip kecil admin di card ---
+                                  if (isAdmin) ...[
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE3F2FD),
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          child: const Text(
+                                            'Admin',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF1565C0),
+                                            ),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.edit,
+                                            size: 18,
+                                          ),
+                                          onPressed: () {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Edit ${p.name} (belum diimplementasikan di Flutter).',
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                  // ------------------------------------------------
                                 ],
                               ),
                             ),

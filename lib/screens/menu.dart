@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hoophub_mobile/cart/screens/cart_page.dart';
 import 'package:hoophub_mobile/review/screens/review_entry_list.dart';
+import 'package:hoophub_mobile/report/screens/report_entry_list.dart';
 import 'package:http/http.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -42,10 +44,10 @@ class _MenuPageState extends State<MenuPage> {
       ),
       const CatalogPage(),
       const Center(child: Text("Wishlist Page", style: TextStyle(fontSize: 30))),
-      const Center(child: Text("Cart Page", style: TextStyle(fontSize: 30))),
+      const CartPage(),
       const InvoiceListPage(),
       const ReviewEntryListPage(),
-      const Center(child: Text("Report Page", style: TextStyle(fontSize: 30))),
+      const ReportEntryListPage(),
     ];
   }
 
@@ -53,7 +55,7 @@ class _MenuPageState extends State<MenuPage> {
     final request = context.read<CookieRequest>();
 
     await request.logout(
-      'http://localhost:8000/authentication/logout-flutter/',
+      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/authentication/logout-flutter/',
     );
 
     if (!context.mounted) return;
@@ -208,38 +210,62 @@ class _DashboardContent extends StatelessWidget {
     {
       'title': 'Catalog',
       'description': 'Lihat daftar produk basket.',
-      'icon': Icons.list_alt
+      'icon': Icons.list_alt,
+      'adminOnly': false,
     },
     {
       'title': 'Cart',
       'description': 'Kelola keranjang belanja kamu.',
-      'icon': Icons.shopping_cart_outlined
+      'icon': Icons.shopping_cart_outlined,
+      'adminOnly': false,
     },
     {
       'title': 'Wishlist',
       'description': 'Simpan produk favoritmu.',
-      'icon': Icons.favorite_border
+      'icon': Icons.favorite_border,
+      'adminOnly': false,
     },
     {
       'title': 'Invoice',
       'description': 'Lihat riwayat pembayaran.',
-      'icon': Icons.receipt_long
+      'icon': Icons.receipt_long,
+      'adminOnly': false,
     },
     {
       'title': 'Report',
       'description': 'Laporkan masalah pesanan.',
-      'icon': Icons.error_outline
+      'icon': Icons.error_outline,
+      'adminOnly': false,
     },
     {
       'title': 'Review',
       'description': 'Beri ulasan produk.',
-      'icon': Icons.rate_review_outlined
+      'icon': Icons.rate_review_outlined,
+      'adminOnly': false,
+    },
+    {
+      'title': 'Manage Products',
+      'description': 'Kelola produk hoophub (Admin).',
+      'icon': Icons.settings,
+      'adminOnly': true,
     },
   ];
 
   @override
   Widget build(BuildContext context) {
-    final username = context.watch<CookieRequest>().jsonData['username'];
+    final cookieRequest = context.watch<CookieRequest>();
+    final bool isLoggedIn = cookieRequest.loggedIn;
+    final String? username = cookieRequest.jsonData['username'];
+    final bool isAdmin = cookieRequest.jsonData['is_admin'] ?? false;
+
+    final visibleMenu = menuItems.where((item) {
+      final bool adminOnly = item['adminOnly'] == true;
+      if (adminOnly && !isAdmin) {
+        return false;
+      }
+      return true;
+    }).toList();
+
     final double topPadding = MediaQuery.of(context).padding.top;
     final Color headerColor = Theme.of(context).colorScheme.primary;
 
@@ -256,7 +282,9 @@ class _DashboardContent extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    username != null ? 'Hi, $username' : 'hoophub',
+                    isLoggedIn && username != null
+                        ? (isAdmin ? 'Hi Admin, $username' : 'Hi, $username')
+                        : 'Welcome, Guest',
                     style: const TextStyle(
                       fontSize: 32,
                       fontFamily: "Poppins",
@@ -264,6 +292,35 @@ class _DashboardContent extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  isAdmin
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.shield_outlined,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Admin Mode',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ],
               ),
             ),
@@ -302,13 +359,13 @@ class _DashboardContent extends StatelessWidget {
             ),
             delegate: SliverChildBuilderDelegate(
               (BuildContext context, int index) {
-                final item = menuItems[index];
+                final item = visibleMenu[index];
                 return _MenuCard(
                   title: item['title'],
                   description: item['description'],
                 );
               },
-              childCount: menuItems.length,
+              childCount: visibleMenu.length,
             ),
           ),
         ),
@@ -317,6 +374,7 @@ class _DashboardContent extends StatelessWidget {
     );
   }
 }
+
 
 class _MenuCard extends StatelessWidget {
   final String title;
@@ -333,10 +391,21 @@ class _MenuCard extends StatelessWidget {
         context,
         MaterialPageRoute(builder: (_) => const CatalogPage()),
       );
+    } else if (title == 'Manage Products') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Admin feature: Manage Products are not implement yet.'),
+        ),
+      );
+    } else if (title == 'Cart') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CartPage()),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Navigasi ke modul $title belum diatur.'),
+          content: Text('Navigasi to modul $title not getting arranged.'),
         ),
       );
     }

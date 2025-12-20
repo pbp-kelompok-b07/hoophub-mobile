@@ -63,10 +63,15 @@ class _ReviewEntryListPageState extends State<ReviewEntryListPage> {
             return const Center(child: CircularProgressIndicator());
           } else {
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No reviews yet.',
-                  style: TextStyle(fontSize: 14, color: Colors.black),
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.rate_review_outlined, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    const Text('No reviews yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               );
             } else {
@@ -115,7 +120,17 @@ class _ReviewEntryListPageState extends State<ReviewEntryListPage> {
 
                   Expanded(
                     child: filtered.isEmpty
-                        ? const Center(child: Text("No reviews yet."))
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.rate_review_outlined, size: 64, color: Colors.grey),
+                                const SizedBox(height: 16),
+                                const Text('No reviews yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                                const SizedBox(height: 16),
+                              ],
+                            ),
+                          ) 
                         : ListView.builder(
                             itemCount: filtered.length,
                             itemBuilder: (_, index) => ReviewEntryCard(

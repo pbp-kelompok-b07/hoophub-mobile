@@ -176,7 +176,8 @@ class _ProductInfoSection extends StatefulWidget {
 class _ProductInfoSectionState extends State<_ProductInfoSection> {
   // State untuk menyimpan status wishlist
   bool _isInWishlist = false;
-  bool _isLoadingWishlist = true; // Untuk mencegah tombol dipencet sebelum cek selesai
+  bool _isLoadingWishlist =
+      true; // Untuk mencegah tombol dipencet sebelum cek selesai
 
   @override
   void initState() {
@@ -190,8 +191,8 @@ class _ProductInfoSectionState extends State<_ProductInfoSection> {
 
   // Fungsi 1: Cek apakah barang sudah ada di wishlist (GET ke json user)
   Future<void> _checkWishlistStatus() async {
-    final request = context.read<CookieRequest>();
     try {
+      final request = context.read<CookieRequest>();
       // Mengambil daftar wishlist user saat ini
       final response = await request.get(
         'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/wishlist/api/json/',
@@ -201,7 +202,7 @@ class _ProductInfoSectionState extends State<_ProductInfoSection> {
       bool found = false;
       for (var item in response) {
         // Model JSON dari show_json: { "id": ..., "product_id": ..., ... }
-        if (item['product_id'] == widget.product.id) {
+        if (item['product_id'].toString() == widget.product.id.toString()) {
           found = true;
           break;
         }
@@ -224,15 +225,13 @@ class _ProductInfoSectionState extends State<_ProductInfoSection> {
   }
 
   // Fungsi 2: Toggle Wishlist (Add/Remove)
-  Future<void> _handleWishlistToggle() async {
-    final request = context.read<CookieRequest>();
-    
+  Future<void> _handleWishlistToggle(CookieRequest request) async {
     // Simpan state lama untuk rollback jika error (Optimistic UI update)
-    final previousState = _isInWishlist;
-    
-    setState(() {
-      _isInWishlist = !_isInWishlist; // Ubah tampilan duluan agar responsif
-    });
+    // final previousState = _isInWishlist;
+
+    // setState(() {
+    //   _isInWishlist = !_isInWishlist; // Ubah tampilan duluan agar responsif
+    // });
 
     try {
       final response = await request.postJson(
@@ -242,36 +241,25 @@ class _ProductInfoSectionState extends State<_ProductInfoSection> {
         }),
       );
 
-      // Backend mengembalikan: {"status": "added" atau "removed", ...}
-      if (response['status'] == 'success' || response['status'] == 'added' || response['status'] == 'removed') {
-        // Sukses, tampilkan pesan
-        final message = response['status'] == 'added' 
-            ? 'Added to wishlist' 
-            : 'Removed from wishlist';
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            duration: const Duration(milliseconds: 1000),
-          ),
-        );
-      } else {
-        // Jika status tidak dikenali/gagal, kembalikan state
+      if (response['status'] == 'added') {
         setState(() {
-          _isInWishlist = previousState;
+          _isInWishlist = true;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text(response['message'] ?? 'Action failed')),
-        );
+      } else if (response['status'] == 'removed') {
+        setState(() {
+          _isInWishlist = false;
+        });
       }
-    } catch (e) {
-      // Jika error network, kembalikan state
-      setState(() {
-        _isInWishlist = previousState;
-      });
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Network error. Please try again.')),
+        SnackBar(
+          content: Text(
+            "${response['status'] == 'added' ? 'Added to' : 'Removed from'} wishlist",
+          ),
+        ),
       );
+    } catch (e) {
+      print("Error: $e");
     }
   }
 
@@ -382,10 +370,10 @@ class _ProductInfoSectionState extends State<_ProductInfoSection> {
               child: const Text('Review'),
             ),
             const SizedBox(width: 16),
-            
+
             // --- TOMBOL WISHLIST DINAMIS ---
             TextButton.icon(
-              onPressed: _isLoadingWishlist 
+              onPressed: _isLoadingWishlist
                   ? null // Disable jika masih loading status awal
                   : () {
                       if (!request.loggedIn) {
@@ -393,24 +381,29 @@ class _ProductInfoSectionState extends State<_ProductInfoSection> {
                           const SnackBar(content: Text('Please login first.')),
                         );
                       } else {
-                        _handleWishlistToggle();
+                        _handleWishlistToggle(request);
                       }
                     },
               // Ubah icon: Jika _isInWishlist true (added), pakai hati penuh
-              icon: _isLoadingWishlist 
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) 
+              icon: _isLoadingWishlist
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : Icon(
                       _isInWishlist ? Icons.favorite : Icons.favorite_border,
-                      color: _isInWishlist 
-                          ? Colors.red // Atau Colors.orange sesuai tema
+                      color: _isInWishlist
+                          ? Colors
+                                .red // Atau Colors.orange sesuai tema
                           : Theme.of(context).colorScheme.primary,
                     ),
               // Ubah text sesuai status
               label: Text(
                 _isInWishlist ? 'Added to wishlist' : 'Add to wishlist',
                 style: TextStyle(
-                  color: _isInWishlist 
-                      ? Colors.red 
+                  color: _isInWishlist
+                      ? Colors.red
                       : Theme.of(context).colorScheme.primary,
                 ),
               ),

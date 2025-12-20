@@ -18,18 +18,15 @@ class CartItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
 
-    // Tambahkan Card agar ada background dan margin, mencegah konten menempel ke tepi layar
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8), // Memberi jarak antar item
+      margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0), // Padding dalam card
+        padding: const EdgeInsets.all(12.0),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // === 1. PERBAIKAN: Bungkus Gambar dengan SizedBox ===
-            // Ini memaksa gambar memiliki ukuran tetap (80x80) agar tidak overflow
             SizedBox(
               width: 80,
               height: 80,
@@ -53,12 +50,11 @@ class CartItemCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Nama Produk
                   Text(
                     cartItem.fields.productName,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    maxLines: 2, // Batasi maksimal 2 baris
-                    overflow: TextOverflow.ellipsis, // Tambah ... jika kepanjangan
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   
@@ -75,7 +71,6 @@ class CartItemCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text("Qty: ${cartItem.fields.quantity}", style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                      // Gunakan Flexible agar subtotal tidak menabrak kanan
                       Flexible(
                         child: Text(
                           "Total: Rp ${cartItem.fields.subtotal}",

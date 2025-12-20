@@ -5,7 +5,7 @@ List<CartEntry> cartEntryFromJson(String str) => List<CartEntry>.from(json.decod
 String cartEntryToJson(List<CartEntry> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class CartEntry {
-    int pk; // Menggunakan int karena di JSON "pk": 1
+    int pk;
     CartEntryFields fields;
 
     CartEntry({

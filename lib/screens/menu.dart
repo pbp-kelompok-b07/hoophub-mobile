@@ -7,6 +7,7 @@ import 'package:hoophub_mobile/widgets/searchbar.dart';
 import 'package:hoophub_mobile/widgets/navbar.dart';
 import 'package:hoophub_mobile/screens/login.dart';
 import 'package:hoophub_mobile/catalog/screens/catalog_page.dart';
+import 'package:hoophub_mobile/invoice/screens/invoice_list_page.dart'; // Sesuaikan path foldermu
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -42,7 +43,7 @@ class _MenuPageState extends State<MenuPage> {
       const CatalogPage(),
       const Center(child: Text("Wishlist Page", style: TextStyle(fontSize: 30))),
       const Center(child: Text("Cart Page", style: TextStyle(fontSize: 30))),
-      const Center(child: Text("Invoice Page", style: TextStyle(fontSize: 30))),
+      const InvoiceListPage(),
       const ReviewEntryListPage(),
       const Center(child: Text("Report Page", style: TextStyle(fontSize: 30))),
     ];

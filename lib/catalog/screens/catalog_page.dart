@@ -3,8 +3,7 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
-import 'package:hoophub_mobile/catalog/screens/add_product_page.dart';
-import 'package:hoophub_mobile/catalog/screens/edit_product_page.dart';
+import 'package:hoophub_mobile/catalog/screens/add_product_page.dart'; 
 
 class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key});
@@ -25,7 +24,6 @@ class _CatalogPageState extends State<CatalogPage> {
 
   Future<List<Product>> _fetchProducts() async {
     final request = context.read<CookieRequest>();
-
     final response = await request.get(
       'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
     );
@@ -36,39 +34,79 @@ class _CatalogPageState extends State<CatalogPage> {
     return products;
   }
 
+  Future<void> _addToCart(CookieRequest request, int productId) async {
+    try {
+      final response = await request.post(
+        'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/cart/add-flutter/$productId/',
+        {},
+      );
+
+      if (mounted) {
+        if (response['status'] == 'success') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Berhasil ditambahkan ke keranjang"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? "Gagal menambahkan"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Terjadi kesalahan: $e")),
+        );
+      }
+    }
+  }
+
   @override
-Widget build(BuildContext context) {
-  final request = context.watch<CookieRequest>();
-  final dynamic rawUsername = request.jsonData['username'];
-  final String username =
-      rawUsername is String ? rawUsername : (rawUsername ?? '').toString();
-  final bool isAdmin = username.toLowerCase() == 'admin';
+  Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+    final dynamic rawUsername = request.jsonData['username'];
+    final String username =
+        rawUsername is String ? rawUsername : (rawUsername ?? '').toString();
+    final bool isAdmin = username.toLowerCase() == 'admin';
 
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('hoophub Catalog'),
-    ),
-    floatingActionButton: isAdmin
-        ? FloatingActionButton.extended(
-            onPressed: () async {
-              final created = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddProductPage(),
-                ),
-              );
-              if (created == true) {
-                setState(() {
-                  _futureProducts = _fetchProducts();
-                });
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add Product'),
-          )
-        : null,
+    const Color primaryColor = Color(0xFFEE9B00);
 
-      // ----------------------------------
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('hoophub Catalog'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        titleTextStyle: const TextStyle(
+            color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+      ),
+      // Tombol Add Product (Khusus Admin)
+      floatingActionButton: isAdmin
+          ? FloatingActionButton.extended(
+              backgroundColor: primaryColor,
+              onPressed: () async {
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AddProductPage(),
+                  ),
+                );
+                if (created == true) {
+                  setState(() {
+                    _futureProducts = _fetchProducts();
+                  });
+                }
+              },
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('Add Product',
+                  style: TextStyle(color: Colors.white)),
+            )
+          : null,
 
       body: FutureBuilder<List<Product>>(
         future: _futureProducts,
@@ -99,6 +137,7 @@ Widget build(BuildContext context) {
 
           return Column(
             children: [
+              // Search Bar
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -106,7 +145,9 @@ Widget build(BuildContext context) {
                   decoration: const InputDecoration(
                     labelText: 'Find the product!',
                     prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -115,141 +156,26 @@ Widget build(BuildContext context) {
                   },
                 ),
               ),
+
+              // Product Grid
               Expanded(
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 0.65,
+                    childAspectRatio: 0.60,
                   ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final p = filtered[index];
-                    return Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ProductDetailPage(product: p),
-                            ),
-                          );
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(16),
-                                ),
-                                child: p.imageUrl.isNotEmpty
-                                    ? Image.network(
-                                        p.imageUrl,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        errorBuilder: (_, __, ___) =>
-                                            const Center(
-                                                child: Icon(Icons.image)),
-                                      )
-                                    : const Center(child: Icon(Icons.image)),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    p.name,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    p.brand,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Rp ${p.price}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Stok: ${p.stock}',
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-
-                                  // --- tambahan: strip kecil admin di card ---
-                                  if (isAdmin) ...[
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 3,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFE3F2FD),
-                                            borderRadius:
-                                                BorderRadius.circular(999),
-                                          ),
-                                          child: const Text(
-                                            'Admin',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFF1565C0),
-                                            ),
-                                          ),
-                                        ),
-                                       IconButton(
-                                          icon: const Icon(Icons.edit, size: 18),
-                                          onPressed: () async {
-                                            final updated = await Navigator.push<bool>(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => EditProductPage(product: p),
-                                              ),
-                                            );
-
-                                            if (updated == true) {
-                                              setState(() {
-                                                _futureProducts = _fetchProducts();
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                  // ------------------------------------------------
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // Refactored into a separate widget for cleanliness
+                    return _ProductCard(
+                      product: p,
+                      isAdmin: isAdmin,
+                      primaryColor: primaryColor,
+                      onAddToCart: () => _addToCart(request, p.id),
                     );
                   },
                 ),
@@ -257,6 +183,169 @@ Widget build(BuildContext context) {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+// === EXTRACTED WIDGET ===
+class _ProductCard extends StatelessWidget {
+  final Product product;
+  final bool isAdmin;
+  final Color primaryColor;
+  final VoidCallback onAddToCart;
+
+  const _ProductCard({
+    required this.product,
+    required this.isAdmin,
+    required this.primaryColor,
+    required this.onAddToCart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProductDetailPage(product: product),
+            ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Gambar Produk
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: product.imageUrl.isNotEmpty
+                    ? Image.network(
+                        product.imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) =>
+                            const Center(child: Icon(Icons.image)),
+                      )
+                    : const Center(child: Icon(Icons.image)),
+              ),
+            ),
+
+            // Detail Produk
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product.brand,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  // === HARGA & TOMBOL ADD TO CART ===
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Rp ${product.price}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: primaryColor,
+                        ),
+                      ),
+                      // Tombol Keranjang
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.add_shopping_cart, size: 20),
+                          color: primaryColor,
+                          onPressed: onAddToCart,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 4),
+                  Text(
+                    'Stok: ${product.stock}',
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+
+                  // Bagian Admin (Edit Button)
+                  if (isAdmin) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Admin',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1565C0),
+                            ),
+                          ),
+                          IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(
+                              Icons.edit,
+                              size: 18,
+                              color: Color(0xFF1565C0),
+                            ),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Edit ${product.name} (belum diimplementasikan).',
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

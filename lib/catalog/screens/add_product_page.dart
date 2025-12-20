@@ -50,7 +50,7 @@ class _AddProductPageState extends State<AddProductPage> {
     });
 
     final String? releaseDateStr =
-        _releaseDate != null ? _releaseDate!.toIso8601String().split('T').first : null;
+        _releaseDate?.toIso8601String().split('T').first;
     final String uriString = 'http://127.0.0.1:8000/catalog/';
 
     final Map<String, String> body = {
@@ -178,7 +178,7 @@ class _AddProductPageState extends State<AddProductPage> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _category,
+                initialValue: _category,
                 items: categories
                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),

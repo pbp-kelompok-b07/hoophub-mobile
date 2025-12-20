@@ -3,7 +3,8 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
-import 'package:hoophub_mobile/catalog/screens/add_product_page.dart.dart';
+import 'package:hoophub_mobile/catalog/screens/add_product_page.dart';
+import 'package:hoophub_mobile/catalog/screens/edit_product_page.dart';
 
 class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key});
@@ -28,7 +29,6 @@ class _CatalogPageState extends State<CatalogPage> {
     final response = await request.get(
       'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
     );
-
     final List<Product> products = [];
     for (final item in response) {
       products.add(Product.fromJson(item as Map<String, dynamic>));
@@ -223,20 +223,21 @@ Widget build(BuildContext context) {
                                             ),
                                           ),
                                         ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.edit,
-                                            size: 18,
-                                          ),
-                                          onPressed: () {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  'Edit ${p.name} (belum diimplementasikan di Flutter).',
-                                                ),
+                                       IconButton(
+                                          icon: const Icon(Icons.edit, size: 18),
+                                          onPressed: () async {
+                                            final updated = await Navigator.push<bool>(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => EditProductPage(product: p),
                                               ),
                                             );
+
+                                            if (updated == true) {
+                                              setState(() {
+                                                _futureProducts = _fetchProducts();
+                                              });
+                                            }
                                           },
                                         ),
                                       ],

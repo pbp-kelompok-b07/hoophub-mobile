@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -50,42 +51,98 @@ class _AddProductPageState extends State<AddProductPage> {
 
     final String? releaseDateStr =
         _releaseDate != null ? _releaseDate!.toIso8601String().split('T').first : null;
+    final String uriString = 'http://127.0.0.1:8000/catalog/';
 
-    final response = await request.post(
-      'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/create/',
-      {
-        'name': _nameController.text,
-        'brand': _brandController.text,
-        'category': _category,
-        'description': _descriptionController.text,
-        'price': _priceController.text,
-        'stock': _stockController.text,
-        'image': _imageController.text,
-        if (releaseDateStr != null) 'release_date': releaseDateStr,
-        'is_available': _isAvailable ? 'on' : '',
-      },
-    );
+    final Map<String, String> body = {
+      'name': _nameController.text,
+      'brand': _brandController.text,
+      'category': _category,
+      'description': _descriptionController.text,
+      'price': _priceController.text,
+      'stock': _stockController.text,
+      'image': _imageController.text,
+      if (releaseDateStr != null) 'release_date': releaseDateStr,
+      'is_available': _isAvailable ? 'on' : '',
+    };
 
-    setState(() {
-      _submitting = false;
-    });
+    try {
+      final response = await request.post(uriString, body);
 
-    if (response['success'] == true) {
+      // Normal expected response: decoded JSON (Map)
+      if (response is Map && response['success'] == true) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Product created successfully')),
+        );
+        Navigator.pop(context, true);
+        return;
+      }
+
+      if (response is Map) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message']?.toString() ?? 'Failed to create product')),
+        );
+        return;
+      }
+
+      // If the library returned unexpected type:
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product created successfully')),
+        const SnackBar(content: Text('Unexpected server response.')),
       );
-      Navigator.pop(context, true);
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            response['message']?.toString() ?? 'Failed to create product',
+    } on FormatException catch (e) {
+      // Server returned non-JSON (likely HTML: login page / error page)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Server returned non-JSON response. (${e.message})'),
+            duration: const Duration(seconds: 4),
           ),
-        ),
-      );
+        );
+      }
+
+      // Try fallback raw fetch (for debugging). Note: this request may not include session cookies.
+      try {
+        final uri = Uri.parse(uriString);
+        final httpRes = await http.post(uri, body: body);
+        final txt = httpRes.body;
+        final preview = txt.length > 400 ? '${txt.substring(0, 400)}...' : txt;
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Raw response preview (first 400 chars):\n$preview'),
+              duration: const Duration(seconds: 8),
+            ),
+          );
+        }
+      } catch (_) {
+        // ignore fallback errors
+      }
+    } catch (err) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Request failed: $err')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+        });
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _brandController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
+    _stockController.dispose();
+    _imageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -108,8 +165,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   labelText: 'Name',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Required' : null,
+                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -118,19 +174,13 @@ class _AddProductPageState extends State<AddProductPage> {
                   labelText: 'Brand',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Required' : null,
+                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _category,
                 items: categories
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c,
-                        child: Text(c),
-                      ),
-                    )
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                     .toList(),
                 onChanged: (value) {
                   if (value == null) return;
@@ -151,8 +201,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   labelText: 'Price (Rp)',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Required' : null,
+                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -162,8 +211,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   labelText: 'Stock',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Required' : null,
+                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(

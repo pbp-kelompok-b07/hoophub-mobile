@@ -7,6 +7,7 @@ import 'package:hoophub_mobile/widgets/searchbar.dart';
 import 'package:hoophub_mobile/widgets/navbar.dart';
 import 'package:hoophub_mobile/screens/login.dart';
 import 'package:hoophub_mobile/catalog/screens/catalog_page.dart';
+import 'package:hoophub_mobile/wishlist/screens/wish_entry_list.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -40,7 +41,7 @@ class _MenuPageState extends State<MenuPage> {
         goToWishlistTab: _goToWishlistTab,
       ),
       const CatalogPage(),
-      const Center(child: Text("Wishlist Page", style: TextStyle(fontSize: 30))),
+      const WishEntryListPage(),
       const Center(child: Text("Cart Page", style: TextStyle(fontSize: 30))),
       const Center(child: Text("Invoice Page", style: TextStyle(fontSize: 30))),
       const ReviewEntryListPage(),
@@ -394,6 +395,12 @@ class _MenuCard extends StatelessWidget {
           content: Text('Admin feature: Manage Products are not implement yet.'),
         ),
       );
+    } else if (title == 'Wishlist') {
+      // Buka wishlist sebagai halaman baru
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const WishEntryListPage()),
+    );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hoophub_mobile/screens/menu.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 
@@ -26,8 +25,6 @@ class HoopHubApp extends StatelessWidget {
         theme: ThemeData( 
           useMaterial3: true,
           fontFamily: 'Poppins',
-          // Use a Material 3 ColorScheme generated from a seed color,
-          // then override secondary with our custom value.
           colorScheme: ColorScheme.fromSeed(seedColor: primaryColor).copyWith(secondary: secondaryColor,
           ),
         ),

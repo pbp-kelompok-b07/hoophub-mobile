@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hoophub_mobile/review/screens/review_entry_list.dart';
 import 'dart:convert';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -116,11 +115,11 @@ class _ReviewCreatePageState extends State<ReviewCreatePage> {
                                   content: Text("Review created successfully!"),
                                 ),
                               );
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => ReviewEntryListPage()),
-                              );
-                              // Navigator.pop(context, true);
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(builder: (context) => ReviewEntryListPage()),
+                              // );
+                              Navigator.pop(context, true);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

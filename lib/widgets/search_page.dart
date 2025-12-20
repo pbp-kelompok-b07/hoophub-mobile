@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hoophub_mobile/catalog/models/product.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
 
 class CustomSearchPage extends StatefulWidget {
   const CustomSearchPage({super.key});
@@ -10,30 +14,61 @@ class CustomSearchPage extends StatefulWidget {
 class _CustomSearchPageState extends State<CustomSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  List<String> _searchResults = []; // Contoh data hasil pencarian
+  bool _isLoading = true;
 
   // Daftar saran pencarian yang dimuat saat halaman dibuka
-  final List<String> _recentSearches = [
-    'Nike Air Jordan 1 Low',
-    'Adidas Harden Vol. 7',
-    'Puma Clyde All-Pro',
-    'Basket Ball Molten B7G4500',
-    'Socks Nike Elite Mid',
-  ];
+  List<Product> _allProducts = []; // Semua produk dari Django
+  List<Product> _searchResults = []; // Produk yang sudah difilter
 
   @override
   void initState() {
     super.initState();
-    // Fokus otomatis pada TextField setelah halaman dimuat
+    // Panggil fungsi untuk ambil data dari Django saat halaman dibuka
+    _fetchProducts();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
-      // Tampilkan saran pencarian awal
-      setState(() {
-        _searchResults = _recentSearches;
-      });
     });
-    // Tambahkan listener untuk memproses pencarian secara real-time
     _searchController.addListener(_performSearch);
+  }
+
+  Future<void> _fetchProducts() async {
+    final request = context.read<CookieRequest>();
+    try {
+      final response = await request.get(
+        'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
+      );
+      
+      List<Product> listProduct = [];
+      for (var d in response) {
+        if (d != null) {
+          listProduct.add(Product.fromJson(d as Map<String, dynamic>));
+        }
+      }
+
+      setState(() {
+        _allProducts = listProduct;
+        _searchResults = [];
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      debugPrint("Error fetching products: $e");
+    }
+  }
+
+  void _performSearch() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _searchResults = [];
+      } else {
+        _searchResults = _allProducts.where((product) {
+          final name = product.name.toLowerCase();
+          final brand = product.brand.toLowerCase();
+          return name.contains(query) || brand.contains(query);
+        }).toList();
+      }
+    });
   }
 
   @override
@@ -43,104 +78,83 @@ class _CustomSearchPageState extends State<CustomSearchPage> {
     _focusNode.dispose();
     super.dispose();
   }
-  
-  // Fungsi dummy untuk melakukan pencarian
-  void _performSearch() {
-    final query = _searchController.text.toLowerCase();
-    
-    if (query.isEmpty) {
-      // Jika input kosong, tampilkan saran terakhir
-      setState(() {
-        _searchResults = _recentSearches;
-      });
-      return;
-    }
-
-    // Filter daftar saran atau hasil (dalam kasus nyata, ini akan memanggil API)
-    setState(() {
-      _searchResults = _recentSearches
-          .where((item) => item.toLowerCase().contains(query))
-          .toList();
-    });
-  }
-
-  // Widget kustom untuk meniru search bar di header
-  Widget _buildCustomSearchBar(BuildContext context) {
-    return Container(
-      height: 50.0,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: TextField(
-        controller: _searchController,
-        focusNode: _focusNode,
-        autocorrect: false,
-        decoration: InputDecoration(
-          hintText: "Search items...",
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-          prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 24),
-          border: InputBorder.none, // Hapus border bawaan TextField
-          contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 0),
-        ),
-        style: const TextStyle(color: Colors.black, fontSize: 16),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        // Warna app bar sesuai dengan warna header/background di halaman utama
-        backgroundColor: Colors.white, 
+        backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false, // Hapus tombol back bawaan
-        
+        automaticallyImplyLeading: false,
         title: Row(
           children: [
-            // Tambahkan tombol kembali (panah kiri)
             IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black87),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.pop(context),
             ),
-            
-            const SizedBox(width: 8),
-
-            // Masukkan Search Bar kustom di sini
             Expanded(
-              child: _buildCustomSearchBar(context),
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  focusNode: _focusNode,
+                  onChanged: (value) {
+                    _performSearch();
+                  },
+                  decoration: InputDecoration(
+                    hintText: "Search shoes, jerseys...",
+                    prefixIcon: const Icon(Icons.search),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
             ),
-            
-            const SizedBox(width: 16),
-
           ],
         ),
-        toolbarHeight: 70, // Tinggi toolbar yang disesuaikan
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        itemCount: _searchResults.length,
-        itemBuilder: (context, index) {
-          final item = _searchResults[index];
-          return ListTile(
-            leading: Icon(Icons.history, color: Colors.grey[400]),
-            title: Text(item, style: const TextStyle(fontSize: 16)),
-            onTap: () {
-              // Ketika hasil diklik, pindahkan query ke search bar
-              _searchController.text = item;
-              _searchController.selection = TextSelection.fromPosition(
-                  TextPosition(offset: _searchController.text.length));
-              _focusNode.unfocus(); // Opsional: tutup keyboard
-              // Di sini Anda bisa memicu pencarian akhir
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : _searchController.text.isEmpty // Kondisi jika user belum mengetik
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search, size: 80, color: Colors.grey),
+                  Text("Type something to find products", style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            )
+          : _searchResults.isEmpty 
+            ? const Center(child: Text("Product not found."))
+            : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _searchResults.length,
+            itemBuilder: (context, index) {
+              final product = _searchResults[index];
+              return ListTile(
+                leading: const Icon(Icons.search, color: Colors.grey),
+                title: Text(product.name),
+                subtitle: Text(product.brand),
+                trailing: Text("Rp${product.price}"),
+                onTap: () {
+                  // PINDAH KE DETAIL PAGE
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProductDetailPage(product: product),
+                    ),
+                  );
+                },
+              );
             },
-          );
-        },
-      ),
+          ),
     );
   }
 }

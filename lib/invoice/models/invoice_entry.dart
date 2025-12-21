@@ -15,7 +15,6 @@ class InvoiceEntry {
   });
 
   factory InvoiceEntry.fromJson(Map<String, dynamic> json) => InvoiceEntry(
-        // Perbaikan: Django mengirim 'is_admin', bukan 'isAdmin'
         status: json["status"] ?? "", 
         isAdmin: json["is_admin"] ?? json["isAdmin"] ?? false, 
         invoices: json["invoices"] == null 
@@ -37,6 +36,7 @@ class Invoice {
   String fullName;
   String address;
   String city;
+  String postalCode;
   double totalPrice;
   String status;
   List<Item> items;
@@ -48,6 +48,7 @@ class Invoice {
     required this.fullName,
     required this.address,
     required this.city,
+    required this.postalCode,
     required this.totalPrice,
     required this.status,
     required this.items,
@@ -57,9 +58,10 @@ class Invoice {
         id: json["id"]?.toString() ?? "",
         invoiceNo: json["invoice_no"] ?? "No Invoice",
         date: json["date"] ?? "",
-        fullName: json["full_name"] ?? json["fullName"] ?? "Guest",
+        fullName: json["full_name"] ?? json["fullName"] ?? "",
         address: json["address"] ?? "",
         city: json["city"] ?? "",
+        postalCode: json["postal_code"]?.toString() ?? "",
         totalPrice: (json["total_price"] ?? 0).toDouble(),
         status: json["status"] ?? "Pending",
         items: json["items"] == null 
@@ -74,6 +76,7 @@ class Invoice {
         "full_name": fullName,
         "address": address,
         "city": city,
+        "postal_code": postalCode,
         "total_price": totalPrice,
         "status": status,
         "items": List<dynamic>.from(items.map((x) => x.toJson())),
@@ -100,14 +103,13 @@ class Item {
   });
 
   factory Item.fromJson(Map<String, dynamic> json) => Item(
-        productId: json["product_id"] ?? json["productId"] ?? 0,
-        name: json["name"] ?? "Unknown Product",
-        brand: json["brand"] ?? "",
-        // Perbaikan: Gunakan .toDouble() untuk semua angka uang
+        productId: (json["product_id"] ?? json["productId"] ?? 0).toInt(),
+        name: json["name"]?.toString() ?? "Unknown Product",
+        brand: json["brand"]?.toString() ?? "",
         price: (json["price"] ?? 0).toDouble(),
-        quantity: json["quantity"] ?? 0,
+        quantity: (json["quantity"] ?? 0).toInt(),
         subtotal: (json["subtotal"] ?? 0).toDouble(),
-        image: json["image"] ?? "",
+        image: json["image"]?.toString() ?? "",
       );
 
   Map<String, dynamic> toJson() => {

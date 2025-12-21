@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 import 'package:hoophub_mobile/review/models/review_entry.dart' as review_data;
@@ -16,9 +17,9 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
+  // Callback sederhana untuk merefresh halaman jika diperlukan
   void _refreshReviews() {
-    setState(() {
-    });
+    setState(() {});
   }
 
   @override
@@ -154,7 +155,10 @@ class _ProductImageCard extends StatelessWidget {
   }
 }
 
-class _ProductInfoSection extends StatelessWidget {
+// ---------------------------------------------------------
+//  DIUBAH MENJADI STATEFUL WIDGET UNTUK HANDLE STATE WISHLIST
+// ---------------------------------------------------------
+class _ProductInfoSection extends StatefulWidget {
   final Product product;
   final bool inStock;
   final VoidCallback refreshTrigger;
@@ -164,6 +168,100 @@ class _ProductInfoSection extends StatelessWidget {
     required this.inStock,
     required this.refreshTrigger,
   });
+
+  @override
+  State<_ProductInfoSection> createState() => _ProductInfoSectionState();
+}
+
+class _ProductInfoSectionState extends State<_ProductInfoSection> {
+  // State untuk menyimpan status wishlist
+  bool _isInWishlist = false;
+  bool _isLoadingWishlist =
+      true; // Untuk mencegah tombol dipencet sebelum cek selesai
+
+  @override
+  void initState() {
+    super.initState();
+    // Panggil pengecekan status awal saat widget dibuat
+    // Kita gunakan addPostFrameCallback agar context tersedia (untuk akses Provider)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkWishlistStatus();
+    });
+  }
+
+  // Fungsi 1: Cek apakah barang sudah ada di wishlist (GET ke json user)
+  Future<void> _checkWishlistStatus() async {
+    try {
+      final request = context.read<CookieRequest>();
+      // Mengambil daftar wishlist user saat ini
+      final response = await request.get(
+        'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/wishlist/api/json/',
+      );
+
+      // Response berupa List of Objects. Kita cek apakah ada item dengan product_id == widget.product.id
+      bool found = false;
+      for (var item in response) {
+        // Model JSON dari show_json: { "id": ..., "product_id": ..., ... }
+        if (item['product_id'].toString() == widget.product.id.toString()) {
+          found = true;
+          break;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _isInWishlist = found;
+          _isLoadingWishlist = false;
+        });
+      }
+    } catch (e) {
+      print("Error checking wishlist status: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingWishlist = false; // Stop loading even on error
+        });
+      }
+    }
+  }
+
+  // Fungsi 2: Toggle Wishlist (Add/Remove)
+  Future<void> _handleWishlistToggle(CookieRequest request) async {
+    // Simpan state lama untuk rollback jika error (Optimistic UI update)
+    // final previousState = _isInWishlist;
+
+    // setState(() {
+    //   _isInWishlist = !_isInWishlist; // Ubah tampilan duluan agar responsif
+    // });
+
+    try {
+      final response = await request.postJson(
+        'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/wishlist/flutter/toggle/',
+        jsonEncode(<String, String>{
+          'product_id': widget.product.id.toString(),
+        }),
+      );
+
+      if (response['status'] == 'added') {
+        setState(() {
+          _isInWishlist = true;
+        });
+      } else if (response['status'] == 'removed') {
+        setState(() {
+          _isInWishlist = false;
+        });
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "${response['status'] == 'added' ? 'Added to' : 'Removed from'} wishlist",
+          ),
+        ),
+      );
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
 
   Future<List<review_data.ReviewEntry>> fetchReviews(
     CookieRequest request,
@@ -179,7 +277,7 @@ class _ProductInfoSection extends StatelessWidget {
       for (var d in data) {
         if (d != null) {
           var entry = review_data.ReviewEntry.fromJson(d);
-          if (entry.product.id == product.id) {
+          if (entry.product.id == widget.product.id) {
             listReviews.add(entry);
           }
         }
@@ -193,7 +291,7 @@ class _ProductInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = product;
+    final p = widget.product;
     final request = context.watch<CookieRequest>();
 
     return Column(
@@ -223,16 +321,16 @@ class _ProductInfoSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: inStock
+                color: widget.inStock
                     ? const Color(0xFFE8F5E9)
                     : const Color(0xFFFFEBEE),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
-                inStock ? 'Available' : 'Out of stock',
+                widget.inStock ? 'Available' : 'Out of stock',
                 style: TextStyle(
                   fontSize: 12,
-                  color: inStock
+                  color: widget.inStock
                       ? const Color(0xFF2E7D32)
                       : const Color(0xFFC62828),
                 ),
@@ -256,7 +354,7 @@ class _ProductInfoSection extends StatelessWidget {
                     builder: (context) => ReviewCreatePage(productId: p.id),
                   ),
                 );
-                refreshTrigger();
+                widget.refreshTrigger();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFA000),
@@ -272,21 +370,45 @@ class _ProductInfoSection extends StatelessWidget {
               child: const Text('Review'),
             ),
             const SizedBox(width: 16),
+
+            // --- TOMBOL WISHLIST DINAMIS ---
             TextButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Added to wishlist.')),
-                );
-              },
-              icon: Icon(
-                Icons.favorite_border,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              onPressed: _isLoadingWishlist
+                  ? null // Disable jika masih loading status awal
+                  : () {
+                      if (!request.loggedIn) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please login first.')),
+                        );
+                      } else {
+                        _handleWishlistToggle(request);
+                      }
+                    },
+              // Ubah icon: Jika _isInWishlist true (added), pakai hati penuh
+              icon: _isLoadingWishlist
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      _isInWishlist ? Icons.favorite : Icons.favorite_border,
+                      color: _isInWishlist
+                          ? Colors
+                                .red // Atau Colors.orange sesuai tema
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+              // Ubah text sesuai status
               label: Text(
-                'Add to wishlist',
-                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                _isInWishlist ? 'Added to wishlist' : 'Add to wishlist',
+                style: TextStyle(
+                  color: _isInWishlist
+                      ? Colors.red
+                      : Theme.of(context).colorScheme.primary,
+                ),
               ),
             ),
+            // ---------------------------------
           ],
         ),
         const SizedBox(height: 24),
@@ -317,7 +439,7 @@ class _ProductInfoSection extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Text(
+                return const Text(
                   'No reviews yet.',
                   style: TextStyle(fontSize: 14, color: Colors.black),
                 );
@@ -344,7 +466,6 @@ class _ProductInfoSection extends StatelessWidget {
                                 color: Colors.black,
                               ),
                             ),
-
                             Text(
                               review.date,
                               style: const TextStyle(
@@ -353,7 +474,6 @@ class _ProductInfoSection extends StatelessWidget {
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
-
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -372,7 +492,6 @@ class _ProductInfoSection extends StatelessWidget {
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 6),
                             Text(
                               review.review,

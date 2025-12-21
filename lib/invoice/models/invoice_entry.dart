@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-// Update: Menggunakan operator ?. agar tidak error jika string kosong
 List<InvoiceEntry> invoiceEntryFromJson(String str) => 
     List<InvoiceEntry>.from(json.decode(str).map((x) => InvoiceEntry.fromJson(x)));
 
@@ -16,8 +15,9 @@ class InvoiceEntry {
   });
 
   factory InvoiceEntry.fromJson(Map<String, dynamic> json) => InvoiceEntry(
+        // Perbaikan: Django mengirim 'is_admin', bukan 'isAdmin'
         status: json["status"] ?? "", 
-        isAdmin: json["isAdmin"] ?? false, 
+        isAdmin: json["is_admin"] ?? json["isAdmin"] ?? false, 
         invoices: json["invoices"] == null 
             ? [] 
             : List<Invoice>.from(json["invoices"].map((x) => Invoice.fromJson(x))),
@@ -25,7 +25,7 @@ class InvoiceEntry {
 
   Map<String, dynamic> toJson() => {
         "status": status,
-        "isAdmin": isAdmin,
+        "is_admin": isAdmin,
         "invoices": List<dynamic>.from(invoices.map((x) => x.toJson())),
       };
 }
@@ -37,8 +37,7 @@ class Invoice {
   String fullName;
   String address;
   String city;
-  String postalCode;
-  int totalPrice;
+  double totalPrice;
   String status;
   List<Item> items;
 
@@ -49,7 +48,6 @@ class Invoice {
     required this.fullName,
     required this.address,
     required this.city,
-    required this.postalCode,
     required this.totalPrice,
     required this.status,
     required this.items,
@@ -59,13 +57,10 @@ class Invoice {
         id: json["id"]?.toString() ?? "",
         invoiceNo: json["invoice_no"] ?? "No Invoice",
         date: json["date"] ?? "",
-        fullName: json["full_name"] ?? "",
+        fullName: json["full_name"] ?? json["fullName"] ?? "Guest",
         address: json["address"] ?? "",
         city: json["city"] ?? "",
-        postalCode: json["postal_code"] ?? "",
-        totalPrice: (json["total_price"] is double) 
-          ? (json["total_price"] as double).toInt() 
-          : (json["total_price"] ?? 0),
+        totalPrice: (json["total_price"] ?? 0).toDouble(),
         status: json["status"] ?? "Pending",
         items: json["items"] == null 
             ? [] 
@@ -74,13 +69,12 @@ class Invoice {
 
   Map<String, dynamic> toJson() => {
         "id": id,
-        "invoiceNo": invoiceNo,
+        "invoice_no": invoiceNo,
         "date": date,
-        "fullName": fullName,
+        "full_name": fullName,
         "address": address,
         "city": city,
-        "postalCode": postalCode,
-        "totalPrice": totalPrice,
+        "total_price": totalPrice,
         "status": status,
         "items": List<dynamic>.from(items.map((x) => x.toJson())),
       };
@@ -90,9 +84,9 @@ class Item {
   int productId;
   String name;
   String brand;
-  int price;
+  double price;
   int quantity;
-  int subtotal;
+  double subtotal;
   String image;
 
   Item({
@@ -106,17 +100,18 @@ class Item {
   });
 
   factory Item.fromJson(Map<String, dynamic> json) => Item(
-      productId: json["productId"] ?? json["product_id"] ?? 0,
-      name: json["name"]?.toString() ?? "Unknown Product",
-      brand: json["brand"]?.toString() ?? "",
-      price: (json["price"] as num?)?.toInt() ?? 0,
-      quantity: (json["quantity"] as num?)?.toInt() ?? 0,
-      subtotal: (json["subtotal"] as num?)?.toInt() ?? 0,
-      image: json["image"]?.toString() ?? "",
-    );
+        productId: json["product_id"] ?? json["productId"] ?? 0,
+        name: json["name"] ?? "Unknown Product",
+        brand: json["brand"] ?? "",
+        // Perbaikan: Gunakan .toDouble() untuk semua angka uang
+        price: (json["price"] ?? 0).toDouble(),
+        quantity: json["quantity"] ?? 0,
+        subtotal: (json["subtotal"] ?? 0).toDouble(),
+        image: json["image"] ?? "",
+      );
 
   Map<String, dynamic> toJson() => {
-        "productId": productId,
+        "product_id": productId,
         "name": name,
         "brand": brand,
         "price": price,

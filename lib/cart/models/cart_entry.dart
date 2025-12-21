@@ -5,64 +5,62 @@ List<CartEntry> cartEntryFromJson(String str) => List<CartEntry>.from(json.decod
 String cartEntryToJson(List<CartEntry> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class CartEntry {
-    String model;
-    String pk;
+    int pk;
     CartEntryFields fields;
 
     CartEntry({
-        required this.model,
         required this.pk,
         required this.fields,
     });
 
     factory CartEntry.fromJson(Map<String, dynamic> json) => CartEntry(
-        model: json["model"],
-        pk: json["pk"].toString(),
+        pk: json["pk"], 
         fields: CartEntryFields.fromJson(json["fields"]),
     );
 
     Map<String, dynamic> toJson() => {
-        "model": model,
         "pk": pk,
         "fields": fields.toJson(),
     };
 }
 
 class CartEntryFields {
-    int user;
-    int product;
     String productName;
-    int price;          
-    int quantity;       
-    String? thumbnailUrl;
-    int subtotal;      
+    String brand;
+    int price;
+    int quantity;
+    int subtotal;
+    String thumbnailUrl;
+
     CartEntryFields({
-        required this.user,
-        required this.product,
         required this.productName,
+        required this.brand,
         required this.price,
         required this.quantity,
-        this.thumbnailUrl,
         required this.subtotal,
+        required this.thumbnailUrl,
     });
 
     factory CartEntryFields.fromJson(Map<String, dynamic> json) => CartEntryFields(
-        user: json["user"],
-        product: json["product"],
-        productName: json["product_name"] ?? "Unknown Product",
-        price: json["price"],
+        productName: json["product_name"],
+
+        brand: json["brand"],
+        
+        price: json["price"] is int ? json["price"] : int.parse(json["price"].toString()), 
+        
         quantity: json["quantity"],
-        thumbnailUrl: json["thumbnail_url"],
-        subtotal: json["subtotal"] ?? (json["price"] * json["quantity"]),
+        
+        subtotal: json["subtotal"] is int ? json["subtotal"] : int.parse(json["subtotal"].toString()), 
+        
+        thumbnailUrl: json["thumbnail_url"] ?? "", 
     );
 
     Map<String, dynamic> toJson() => {
-        "user": user,
-        "product": product,
         "product_name": productName,
+        "brand": brand,
         "price": price,
         "quantity": quantity,
-        "thumbnail_url": thumbnailUrl,
         "subtotal": subtotal,
+        "thumbnail_url": thumbnailUrl,
     };
 }

@@ -46,8 +46,13 @@ class _MenuPageState extends State<MenuPage> {
       ),
       const CatalogPage(),
       const Center(child: Text("Wishlist Page", style: TextStyle(fontSize: 30))),
-      const CartPage(),
-      const InvoiceListPage(),
+      CartPage(
+        onShopNow: () => _onRegularItemTapped(1),
+        onCheckoutSuccess: () => _onRegularItemTapped(4),
+      ),
+      InvoiceListPage(
+        onReorder: () => _onRegularItemTapped(3)
+      ),
       const ReviewEntryListPage(),
       const ReportEntryListPage(),
     ];
@@ -569,7 +574,6 @@ class _ProductCard extends StatelessWidget {
   final String imageUrl;
 
   const _ProductCard({
-    super.key,
     required this.product,
     required this.imageUrl,
   });

@@ -394,7 +394,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
                       height: 270,
                       child: Image.network(
                         "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/report/proxy-image/?url="
-                        "${Uri.encodeComponent(widget.report.reportedProduct!.image!)}",
+                        "${Uri.encodeComponent(widget.report.reportedProduct!.image)}",
                         fit: BoxFit.cover,
                       ),
                     ),

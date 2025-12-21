@@ -1,65 +1,121 @@
-// To parse this JSON data, do
-//
-//     final invoiceEntry = invoiceEntryFromJson(jsonString);
-
 import 'dart:convert';
 
-List<InvoiceEntry> invoiceEntryFromJson(String str) => List<InvoiceEntry>.from(json.decode(str).map((x) => InvoiceEntry.fromJson(x)));
-
-String invoiceEntryToJson(List<InvoiceEntry> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+// Update: Menggunakan operator ?. agar tidak error jika string kosong
+List<InvoiceEntry> invoiceEntryFromJson(String str) => 
+    List<InvoiceEntry>.from(json.decode(str).map((x) => InvoiceEntry.fromJson(x)));
 
 class InvoiceEntry {
-    String id;
-    String name;
-    String description;
-    String category;
-    int stock;
-    String price;
-    String color;
-    String size;
-    String thumbnail;
-    bool isFeatured;
-    int userId;
+  String status;
+  bool isAdmin;
+  List<Invoice> invoices;
 
-    InvoiceEntry({
-        required this.id,
-        required this.name,
-        required this.description,
-        required this.category,
-        required this.stock,
-        required this.price,
-        required this.color,
-        required this.size,
-        required this.thumbnail,
-        required this.isFeatured,
-        required this.userId,
-    });
+  InvoiceEntry({
+    required this.status,
+    required this.isAdmin,
+    required this.invoices,
+  });
 
-    factory InvoiceEntry.fromJson(Map<String, dynamic> json) => InvoiceEntry(
-        id: json["id"],
-        name: json["name"],
-        description: json["description"],
-        category: json["category"],
-        stock: json["stock"],
-        price: json["price"],
-        color: json["color"],
-        size: json["size"],
-        thumbnail: json["thumbnail"],
-        isFeatured: json["is_featured"],
-        userId: json["user_id"],
-    );
+  factory InvoiceEntry.fromJson(Map<String, dynamic> json) => InvoiceEntry(
+        status: json["status"] ?? "", 
+        isAdmin: json["isAdmin"] ?? false, 
+        invoices: json["invoices"] == null 
+            ? [] 
+            : List<Invoice>.from(json["invoices"].map((x) => Invoice.fromJson(x))),
+      );
 
-    Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() => {
+        "status": status,
+        "isAdmin": isAdmin,
+        "invoices": List<dynamic>.from(invoices.map((x) => x.toJson())),
+      };
+}
+
+class Invoice {
+  String id;
+  String invoiceNo;
+  String date;
+  String fullName;
+  String address;
+  String city;
+  int totalPrice;
+  String status;
+  List<Item> items;
+
+  Invoice({
+    required this.id,
+    required this.invoiceNo,
+    required this.date,
+    required this.fullName,
+    required this.address,
+    required this.city,
+    required this.totalPrice,
+    required this.status,
+    required this.items,
+  });
+
+  factory Invoice.fromJson(Map<String, dynamic> json) => Invoice(
+        id: json["id"]?.toString() ?? "",
+        invoiceNo: json["invoice_no"] ?? "No Invoice",
+        date: json["date"] ?? "",
+        fullName: json["fullName"] ?? "Guest",
+        address: json["address"] ?? "",
+        city: json["city"] ?? "",
+        totalPrice: json["total_price"] ?? 0,
+        status: json["status"] ?? "Pending",
+        items: json["items"] == null 
+            ? [] 
+            : List<Item>.from(json["items"].map((x) => Item.fromJson(x))),
+      );
+
+  Map<String, dynamic> toJson() => {
         "id": id,
+        "invoiceNo": invoiceNo,
+        "date": date,
+        "fullName": fullName,
+        "address": address,
+        "city": city,
+        "totalPrice": totalPrice,
+        "status": status,
+        "items": List<dynamic>.from(items.map((x) => x.toJson())),
+      };
+}
+
+class Item {
+  int productId;
+  String name;
+  String brand;
+  int price;
+  int quantity;
+  int subtotal;
+  String image;
+
+  Item({
+    required this.productId,
+    required this.name,
+    required this.brand,
+    required this.price,
+    required this.quantity,
+    required this.subtotal,
+    required this.image,
+  });
+
+  factory Item.fromJson(Map<String, dynamic> json) => Item(
+        productId: json["productId"] ?? json["product_id"] ?? 0,
+        name: json["name"] ?? "Unknown Product",
+        brand: json["brand"] ?? "",
+        price: json["price"] ?? 0,
+        quantity: json["quantity"] ?? 0,
+        subtotal: json["subtotal"] ?? 0,
+        image: json["image"] ?? "",
+      );
+
+  Map<String, dynamic> toJson() => {
+        "productId": productId,
         "name": name,
-        "description": description,
-        "category": category,
-        "stock": stock,
+        "brand": brand,
         "price": price,
-        "color": color,
-        "size": size,
-        "thumbnail": thumbnail,
-        "is_featured": isFeatured,
-        "user_id": userId,
-    };
+        "quantity": quantity,
+        "subtotal": subtotal,
+        "image": image,
+      };
 }

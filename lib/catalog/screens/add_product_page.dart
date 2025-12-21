@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -13,6 +13,7 @@ class AddProductPage extends StatefulWidget {
 class _AddProductPageState extends State<AddProductPage> {
   final _formKey = GlobalKey<FormState>();
 
+  // Controllers for input fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _brandController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -20,122 +21,14 @@ class _AddProductPageState extends State<AddProductPage> {
   final TextEditingController _stockController = TextEditingController();
   final TextEditingController _imageController = TextEditingController();
 
-  String _category = 'Shoes';
-  DateTime? _releaseDate;
-  bool _isAvailable = true;
+  // State variables
+  String _category = 'Shoes'; 
+  bool _isAvailable = true; // Variable to store the switch state
   bool _submitting = false;
-
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _releaseDate ?? now,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(now.year + 5),
-    );
-    if (picked != null) {
-      setState(() {
-        _releaseDate = picked;
-      });
-    }
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final request = context.read<CookieRequest>();
-
-    setState(() {
-      _submitting = true;
-    });
-
-    final String? releaseDateStr =
-        _releaseDate?.toIso8601String().split('T').first;
-    final String uriString = 'http://127.0.0.1:8000/catalog/';
-
-    final Map<String, String> body = {
-      'name': _nameController.text,
-      'brand': _brandController.text,
-      'category': _category,
-      'description': _descriptionController.text,
-      'price': _priceController.text,
-      'stock': _stockController.text,
-      'image': _imageController.text,
-      if (releaseDateStr != null) 'release_date': releaseDateStr,
-      'is_available': _isAvailable ? 'on' : '',
-    };
-
-    try {
-      final response = await request.post(uriString, body);
-
-      // Normal expected response: decoded JSON (Map)
-      if (response is Map && response['success'] == true) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Product created successfully')),
-        );
-        Navigator.pop(context, true);
-        return;
-      }
-
-      if (response is Map) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['message']?.toString() ?? 'Failed to create product')),
-        );
-        return;
-      }
-
-      // If the library returned unexpected type:
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unexpected server response.')),
-      );
-    } on FormatException catch (e) {
-      // Server returned non-JSON (likely HTML: login page / error page)
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Server returned non-JSON response. (${e.message})'),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-
-      // Try fallback raw fetch (for debugging). Note: this request may not include session cookies.
-      try {
-        final uri = Uri.parse(uriString);
-        final httpRes = await http.post(uri, body: body);
-        final txt = httpRes.body;
-        final preview = txt.length > 400 ? '${txt.substring(0, 400)}...' : txt;
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Raw response preview (first 400 chars):\n$preview'),
-              duration: const Duration(seconds: 8),
-            ),
-          );
-        }
-      } catch (_) {
-        // ignore fallback errors
-      }
-    } catch (err) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Request failed: $err')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _submitting = false;
-        });
-      }
-    }
-  }
 
   @override
   void dispose() {
+    // Clean up controllers to prevent memory leaks
     _nameController.dispose();
     _brandController.dispose();
     _descriptionController.dispose();
@@ -147,132 +40,160 @@ class _AddProductPageState extends State<AddProductPage> {
 
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
     final categories = ['Shoes', 'Jersey', 'Ball', 'Pants', 'Accessories'];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Product'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: ListView(
+          child: Column(
             children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _brandController,
-                decoration: const InputDecoration(
-                  labelText: 'Brand',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _category,
-                items: categories
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    _category = value;
-                  });
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _priceController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Price (Rp)',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _stockController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Stock',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) => value == null || value.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _imageController,
-                decoration: const InputDecoration(
-                  labelText: 'Image URL',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _releaseDate != null
-                          ? 'Release date: ${_releaseDate!.toIso8601String().split('T').first}'
-                          : 'Release date: -',
-                    ),
+              _buildTextField('Name', _nameController),
+              _buildTextField('Brand', _brandController),
+              
+              // Dropdown for Category
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: DropdownButtonFormField<String>(
+                  value: _category,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
                   ),
-                  TextButton(
-                    onPressed: _pickDate,
-                    child: const Text('Pick date'),
-                  ),
-                ],
+                  items: categories.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _category = newValue!;
+                    });
+                  },
+                ),
               ),
-              const SizedBox(height: 4),
-              SwitchListTile(
-                value: _isAvailable,
-                title: const Text('Available'),
-                onChanged: (value) {
-                  setState(() {
-                    _isAvailable = value;
-                  });
-                },
+
+              _buildTextField('Price', _priceController, isNumber: true),
+              _buildTextField('Stock', _stockController, isNumber: true),
+              _buildTextField('Image URL', _imageController),
+              _buildTextField('Description', _descriptionController, maxLines: 3),
+
+              // === AVAILABLE SWITCH ===
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: SwitchListTile(
+                  title: const Text('Available'),
+                  subtitle: const Text('Is this product ready for sale?'),
+                  value: _isAvailable,
+                  activeColor: const Color(0xFFEE9B00),
+                  onChanged: (bool value) {
+                    setState(() {
+                      _isAvailable = value;
+                    });
+                  },
+                ),
               ),
-              const SizedBox(height: 16),
+              // ========================
+
+              const SizedBox(height: 20),
+
+              // Save Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Save'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEE9B00),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: _submitting ? null : () async {
+                    // 1. Validate Form
+                    if (_formKey.currentState!.validate()) {
+                        
+                        setState(() {
+                          _submitting = true;
+                        });
+
+                        // 2. Send Request to Django
+                        final response = await request.postJson(
+                          "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/create-flutter/",
+                          jsonEncode(<String, dynamic>{
+                            'name': _nameController.text,
+                            'brand': _brandController.text,
+                            'category': _category,
+                            'price': int.parse(_priceController.text),
+                            'stock': int.parse(_stockController.text),
+                            'description': _descriptionController.text,
+                            'image': _imageController.text, 
+                            'is_available': _isAvailable, // Sending the switch status
+                          }),
+                        );
+
+                        setState(() {
+                          _submitting = false;
+                        });
+
+                        // 3. Handle Response
+                        if (context.mounted) {
+                          if (response['status'] == 'success') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Produk baru berhasil disimpan!"),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            Navigator.pop(context, true); // Return success signal
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(response['message'] ?? "Gagal menyimpan"),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                    }
+                  },
+                  child: _submitting 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Save Product', style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Helper widget to avoid code repetition
+  Widget _buildTextField(String label, TextEditingController controller, {bool isNumber = false, int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return '$label must not empty';
+          }
+          if (isNumber && int.tryParse(value) == null) {
+            return '$label must be number';
+          }
+          return null;
+        },
       ),
     );
   }

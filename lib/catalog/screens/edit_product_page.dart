@@ -83,7 +83,7 @@ class _EditProductPageState extends State<EditProductPage> {
                 foregroundColor: Colors.white,
               ),
               onPressed: () async {
-                // 1. Validasi sederhana: Pastikan Harga dan Stok adalah Angka
+                // Validasi sederhana
                 if (int.tryParse(priceController.text) == null || 
                     int.tryParse(stockController.text) == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -92,24 +92,25 @@ class _EditProductPageState extends State<EditProductPage> {
                     return;
                 }
 
-                // 2. Kirim Request ke Django
+                // Kirim Request ke Django
                 final response = await request.postJson(
-                  // PENTING: Gunakan URL edit-flutter yang sudah kita buat
                   "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/edit-flutter/${widget.product.id}/",
-                  
-                  // PENTING: Bungkus data dengan jsonEncode
                   jsonEncode(<String, dynamic>{
                     'name': nameController.text,
                     'brand': brandController.text,
-                    'category': categoryController.text,
+                    // Pastikan category dikirim jika Django memintanya. 
+                    // Jika di Django tidak ada 'category', hapus baris ini.
+                    'category': categoryController.text, 
                     'description': descriptionController.text,
-                    'price': int.parse(priceController.text), // Kirim sebagai integer
-                    'stock': int.parse(stockController.text), // Kirim sebagai integer
-                    'image': imageController.text, // Pastikan key ini sama dengan di Django views.py ('image' atau 'image_url')
+                    'price': int.parse(priceController.text),
+                    'stock': int.parse(stockController.text),
+                    
+                    // === PERBAIKAN DI SINI ===
+                    // Mengubah key dari 'image' menjadi 'image_url' sesuai permintaan server
+                    'image_url': imageController.text, 
                   }),
                 );
 
-                // 3. Cek Respons
                 if (context.mounted) {
                   if (response['status'] == 'success') {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -118,11 +119,11 @@ class _EditProductPageState extends State<EditProductPage> {
                         backgroundColor: Colors.green,
                       ),
                     );
-                    // Kembali ke halaman Catalog dan kirim sinyal refresh (true)
                     Navigator.pop(context, true);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
+                        // Menampilkan pesan error dari server agar kita tahu apa yang salah
                         content: Text(response['message'] ?? "Gagal mengubah produk"),
                         backgroundColor: Colors.red,
                       ),

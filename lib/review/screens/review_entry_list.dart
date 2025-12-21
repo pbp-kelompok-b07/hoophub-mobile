@@ -55,6 +55,7 @@ class _ReviewEntryListPageState extends State<ReviewEntryListPage> {
   Widget build(BuildContext context) {
     final request = context.watch<CookieRequest>();
     return Scaffold(
+      appBar: AppBar(title: Text("Review"), backgroundColor: Colors.white,),
       backgroundColor: Colors.white,
       body: FutureBuilder(
         future: fetchReviews(request),

@@ -100,7 +100,6 @@ class _WishEntryListPageState extends State<WishEntryListPage> {
 
       for (var d in response) {
         if (d != null) {
-          // KARENA MODEL ANDA SUDAH CANGGIH, CUKUP PANGGIL INI:
           WishEntry entry = WishEntry.fromJson(d);
 
           // Hanya masukkan jika produk berhasil di-parse (tidak null)
@@ -207,7 +206,6 @@ class _WishEntryListPageState extends State<WishEntryListPage> {
     setState(() => _processingAddProductId = entry.product!.id);
 
     try {
-      // Sesuaikan URL ini dengan endpoint cart teman Anda
       final response = await request.postJson(
         '$baseUrl/cart/add-flutter/', 
         jsonEncode({'product_id': entry.product!.id}),

@@ -50,7 +50,7 @@ class WishEntryCard extends StatelessWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF265C68), // Warna kartu sesuai gambar (Dark Teal)
+          color: const Color(0xFF265C68),
           borderRadius: BorderRadius.circular(20),
         ),
         padding: const EdgeInsets.all(12),

@@ -574,8 +574,6 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Kita bungkus dengan Center/Align agar saat di-scale down,
-    // dia tetap berada di tengah vertikal.
     return Align(
       alignment: Alignment.center,
       child: Container(

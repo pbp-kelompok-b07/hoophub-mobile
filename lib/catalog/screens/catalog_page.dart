@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:hoophub_mobile/catalog/screens/edit_product_page.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
-import 'package:hoophub_mobile/catalog/screens/add_product_page.dart'; 
+import 'package:hoophub_mobile/catalog/screens/add_product_page.dart';
+import 'package:hoophub_mobile/screens/edit_product_page.dart';
 
 class CatalogPage extends StatefulWidget {
   const CatalogPage({super.key});
@@ -27,6 +29,7 @@ class _CatalogPageState extends State<CatalogPage> {
     final response = await request.get(
       'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/json/',
     );
+
     final List<Product> products = [];
     for (final item in response) {
       products.add(Product.fromJson(item as Map<String, dynamic>));
@@ -34,6 +37,7 @@ class _CatalogPageState extends State<CatalogPage> {
     return products;
   }
 
+  // === FUNGSI TAMBAH KE KERANJANG ===
   Future<void> _addToCart(CookieRequest request, int productId) async {
     try {
       final response = await request.post(
@@ -75,6 +79,7 @@ class _CatalogPageState extends State<CatalogPage> {
         rawUsername is String ? rawUsername : (rawUsername ?? '').toString();
     final bool isAdmin = username.toLowerCase() == 'admin';
 
+    // Warna tema
     const Color primaryColor = Color(0xFFEE9B00);
 
     return Scaffold(
@@ -82,8 +87,7 @@ class _CatalogPageState extends State<CatalogPage> {
         title: const Text('hoophub Catalog'),
         backgroundColor: Colors.white,
         elevation: 0,
-        titleTextStyle: const TextStyle(
-            color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
+        titleTextStyle: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
       ),
       // Tombol Add Product (Khusus Admin)
       floatingActionButton: isAdmin
@@ -103,8 +107,7 @@ class _CatalogPageState extends State<CatalogPage> {
                 }
               },
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Product',
-                  style: TextStyle(color: Colors.white)),
+              label: const Text('Add Product', style: TextStyle(color: Colors.white)),
             )
           : null,
 
@@ -139,8 +142,7 @@ class _CatalogPageState extends State<CatalogPage> {
             children: [
               // Search Bar
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: TextField(
                   decoration: const InputDecoration(
                     labelText: 'Find the product!',
@@ -156,7 +158,7 @@ class _CatalogPageState extends State<CatalogPage> {
                   },
                 ),
               ),
-
+              
               // Product Grid
               Expanded(
                 child: GridView.builder(
@@ -170,12 +172,144 @@ class _CatalogPageState extends State<CatalogPage> {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final p = filtered[index];
-                    // Refactored into a separate widget for cleanliness
-                    return _ProductCard(
-                      product: p,
-                      isAdmin: isAdmin,
-                      primaryColor: primaryColor,
-                      onAddToCart: () => _addToCart(request, p.id),
+                    return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ProductDetailPage(product: p),
+                            ),
+                          );
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Gambar Produk
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(16),
+                                ),
+                                child: p.imageUrl.isNotEmpty
+                                    ? Image.network(
+                                        p.imageUrl,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        errorBuilder: (_, __, ___) =>
+                                            const Center(child: Icon(Icons.image)),
+                                      )
+                                    : const Center(child: Icon(Icons.image)),
+                              ),
+                            ),
+                            
+                            // Detail Produk
+                            Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    p.brand,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  
+                                  // === HARGA & TOMBOL ADD TO CART ===
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Rp ${p.price}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: primaryColor,
+                                        ),
+                                      ),
+                                      // Tombol Keranjang
+                                      SizedBox(
+                                        width: 32,
+                                        height: 32,
+                                        child: IconButton(
+                                          padding: EdgeInsets.zero,
+                                          icon: const Icon(Icons.add_shopping_cart, size: 20),
+                                          color: primaryColor,
+                                          onPressed: () {
+                                            _addToCart(request, p.id); 
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Stok: ${p.stock}',
+                                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                  ),
+
+                                  // Bagian Admin (Edit Button)
+                                  if (isAdmin) ...[
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE3F2FD),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            'Admin',
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1565C0)),
+                                          ),
+                                          InkWell(
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => EditProductPage(
+                                                    product: p,                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            child: const Icon(
+                                              Icons.edit,
+                                              size: 16,
+                                              color: Color(0xFF1565C0),
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -183,169 +317,6 @@ class _CatalogPageState extends State<CatalogPage> {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-// === EXTRACTED WIDGET ===
-class _ProductCard extends StatelessWidget {
-  final Product product;
-  final bool isAdmin;
-  final Color primaryColor;
-  final VoidCallback onAddToCart;
-
-  const _ProductCard({
-    required this.product,
-    required this.isAdmin,
-    required this.primaryColor,
-    required this.onAddToCart,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProductDetailPage(product: product),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Gambar Produk
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-                child: product.imageUrl.isNotEmpty
-                    ? Image.network(
-                        product.imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) =>
-                            const Center(child: Icon(Icons.image)),
-                      )
-                    : const Center(child: Icon(Icons.image)),
-              ),
-            ),
-
-            // Detail Produk
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    product.brand,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-
-                  // === HARGA & TOMBOL ADD TO CART ===
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Rp ${product.price}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: primaryColor,
-                        ),
-                      ),
-                      // Tombol Keranjang
-                      SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(Icons.add_shopping_cart, size: 20),
-                          color: primaryColor,
-                          onPressed: onAddToCart,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 4),
-                  Text(
-                    'Stok: ${product.stock}',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
-                  ),
-
-                  // Bagian Admin (Edit Button)
-                  if (isAdmin) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE3F2FD),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Admin',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1565C0),
-                            ),
-                          ),
-                          IconButton(
-                            constraints: const BoxConstraints(),
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(
-                              Icons.edit,
-                              size: 18,
-                              color: Color(0xFF1565C0),
-                            ),
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Edit ${product.name} (belum diimplementasikan).',
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

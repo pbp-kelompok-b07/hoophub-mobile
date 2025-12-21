@@ -126,6 +126,128 @@ class OrderCard extends StatelessWidget {
     }
   }
 
+  void _showInvoiceDetailModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: const Color(0xFFE0E0E0), // Background abu-abu
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Invoice Detail", 
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const DashedLineSeparator(),
+                const SizedBox(height: 16),
+
+                // Baris Thumbnail Produk
+                SizedBox(
+                  height: 60,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: entry.items.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (ctx, idx) => Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.network(entry.items[idx].image, 
+                          width: 50, height: 50, fit: BoxFit.cover),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Detail Teks
+                _buildDetailRow("Invoice No:", entry.invoiceNo),
+                _buildDetailRow("Date:", entry.date),
+                _buildDetailRow("Full Name:", entry.fullName),
+                _buildDetailRow("Address:", entry.address),
+                _buildDetailRow("City:", entry.city),
+                _buildDetailRow("Postal Code:", entry.postalCode),
+                _buildDetailRow("Status:", entry.status),
+                _buildDetailRow("Total Price:", "Rp${entry.totalPrice}"),
+
+                const SizedBox(height: 16),
+                const DashedLineSeparator(),
+                const SizedBox(height: 16),
+
+                const Text("Items", 
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+
+                // List Items
+                Column(
+                  children: entry.items.map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(item.image, 
+                            width: 50, height: 50, fit: BoxFit.cover),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.name, 
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              Text("Qty: ${item.quantity} • Rp${item.price} • Subtotal: Rp${item.subtotal}",
+                                style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper untuk baris detail
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(color: Colors.black, fontSize: 14,),
+          children: [
+            TextSpan(text: "$label ", style: const TextStyle(fontWeight: FontWeight.bold)),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showEditStatusModal(BuildContext context, CookieRequest request) {
     String selectedStatus = entry.status; // Nilai awal sesuai status sekarang
     List<String> statusChoices = ["Pending", "Paid", "Shipping", "Cancelled"];
@@ -234,271 +356,275 @@ class OrderCard extends StatelessWidget {
     // Ambil item pertama untuk preview di card (asumsi minimal ada 1 item)
     final firstItem = entry.items.isNotEmpty ? entry.items[0] : null;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5), // Abu-abu muda
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: Invoice No & Tanggal
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Invoice ${entry.invoiceNo}",
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      entry.date, 
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
-                  ],
+    return InkWell(
+      onTap: () => _showInvoiceDetailModal(context),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F5), // Abu-abu muda
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header: Invoice No & Tanggal
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Invoice ${entry.invoiceNo}",
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        entry.date, 
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 12),
+              ],
+            ),
+            
+            const SizedBox(height: 12),
 
-          // Tombol Aksi
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildActionButton("Edit Status", const Color(0xFF006064), () {
-                final request = context.read<CookieRequest>();
-                _showEditStatusModal(context, request);
-              }),
-              _buildActionButton("Order Again", Colors.orange, () async {
-                final request = context.read<CookieRequest>();
+            // Tombol Aksi
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildActionButton("Edit Status", const Color(0xFF006064), () {
+                  final request = context.read<CookieRequest>();
+                  _showEditStatusModal(context, request);
+                }),
+                _buildActionButton("Order Again", Colors.orange, () async {
+                  final request = context.read<CookieRequest>();
 
-                // 1. Siapkan data items dari invoice ini
-                List<Map<String, dynamic>> itemsToReorder = entry.items.map((item) {
-                  return {
-                    "productId": item.productId,
-                    "quantity": item.quantity,
-                  };
-                }).toList();
+                  // 1. Siapkan data items dari invoice ini
+                  List<Map<String, dynamic>> itemsToReorder = entry.items.map((item) {
+                    return {
+                      "productId": item.productId,
+                      "quantity": item.quantity,
+                    };
+                  }).toList();
 
-                // 2. Kirim request ke Django
-                final response = await request.post(
-                  'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/invoice/reorder-flutter/',
-                  jsonEncode({"items": itemsToReorder}),
-                );
+                  // 2. Kirim request ke Django
+                  final response = await request.post(
+                    'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/invoice/reorder-flutter/',
+                    jsonEncode({"items": itemsToReorder}),
+                  );
 
-                if (context.mounted) {
-                  if (response['status'] == 'success') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("All items added to cart!"))
-                    );
-                    onReorder?.call();
-                    
-                    // Opsional: Arahkan user langsung ke halaman Cart
-                    // Navigator.push(context, MaterialPageRoute(builder: (context) => const CartPage()));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(response['message'] ?? "Failed to add items"))
-                    );
+                  if (context.mounted) {
+                    if (response['status'] == 'success') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("All items added to cart!"))
+                      );
+                      onReorder?.call();
+                      
+                      // Opsional: Arahkan user langsung ke halaman Cart
+                      // Navigator.push(context, MaterialPageRoute(builder: (context) => const CartPage()));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(response['message'] ?? "Failed to add items"))
+                      );
+                    }
                   }
-                }
-              }),
-              // Di dalam OrderCard
-              _buildActionButton("Delete", const Color(0xFFBF360C), () async {
-                  // 1. Tampilkan konfirmasi (Dialog) agar tidak sengaja terhapus
-                  bool confirm = await showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        backgroundColor: const Color(0xFFE0E0E0), // Latar abu-abu sesuai gambar
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        title: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Delete this invoice?",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                }),
+                // Di dalam OrderCard
+                _buildActionButton("Delete", const Color(0xFFBF360C), () async {
+                    // 1. Tampilkan konfirmasi (Dialog) agar tidak sengaja terhapus
+                    bool confirm = await showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          backgroundColor: const Color(0xFFE0E0E0), // Latar abu-abu sesuai gambar
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Delete this invoice?",
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                              ),
+                              // Ikon X di pojok kanan atas
+                              GestureDetector(
+                                onTap: () => Navigator.pop(context, false),
+                                child: const Icon(Icons.close, color: Colors.black),
+                              ),
+                            ],
+                          ),
+                          content: const Text(
+                            "This action cannot be undone.",
+                            style: TextStyle(fontSize: 16, color: Colors.black87),
+                          ),
+                          actionsPadding: const EdgeInsets.only(right: 16, bottom: 16),
+                          actions: [
+                            // Tombol Cancel (Abu-abu)
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[600],
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: const Text(
+                                "Cancel",
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
                             ),
-                            // Ikon X di pojok kanan atas
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context, false),
-                              child: const Icon(Icons.close, color: Colors.black),
+                            const SizedBox(width: 8),
+                            // Tombol Delete (Oranye Tua/Kemerahan)
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFBF360C), // Warna oranye kemerahan sesuai gambar
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: const Text(
+                                "Delete",
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ) ?? false;
+
+                    if (confirm) {
+                        final request = context.read<CookieRequest>();
+                        
+                        // 2. Kirim request hapus ke Django
+                        final response = await request.post(
+                            'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/invoice/delete-invoice-flutter/',
+                            jsonEncode({'id': entry.id}),
+                        );
+
+                        if (response['status'] == 'success') {
+                            onDelete();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Invoice deleted successfully"))
+                            );
+                            // 3. Refresh halaman (panggil callback refresh yang ada di Parent)
+                            // Kamu bisa menggunakan Provider atau memanggil fungsi refreshPage()
+                        } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Failed to delete invoice"))
+                            );
+                        }
+                    }
+                }),
+              ],
+            ),
+            
+            const SizedBox(height: 20),
+
+            // Product Preview (Hanya menampilkan item pertama)
+            // --- GANTI BAGIAN "Product Preview" (Kotak Putih) DENGAN INI ---
+
+            // Kita gunakan Column untuk menampilkan semua item yang ada di list entry.items
+            Column(
+              children: entry.items.map((item) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12), // Jarak antar produk
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Gambar Produk
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          item.image,
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, stack) => Container(
+                            width: 70, height: 70, color: Colors.grey[300], 
+                            child: const Icon(Icons.broken_image, size: 20)
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Detail Produk
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text("Quantity: ${item.quantity}", 
+                                style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text("Brand: ${item.brand}", 
+                                style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text("Price: Rp${item.price}", 
+                                style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Subtotal: Rp${item.subtotal}", 
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87)
                             ),
                           ],
                         ),
-                        content: const Text(
-                          "This action cannot be undone.",
-                          style: TextStyle(fontSize: 16, color: Colors.black87),
-                        ),
-                        actionsPadding: const EdgeInsets.only(right: 16, bottom: 16),
-                        actions: [
-                          // Tombol Cancel (Abu-abu)
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey[600],
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text(
-                              "Cancel",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Tombol Delete (Oranye Tua/Kemerahan)
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFBF360C), // Warna oranye kemerahan sesuai gambar
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text(
-                              "Delete",
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ) ?? false;
-
-                  if (confirm) {
-                      final request = context.read<CookieRequest>();
-                      
-                      // 2. Kirim request hapus ke Django
-                      final response = await request.post(
-                          'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/invoice/delete-invoice-flutter/',
-                          jsonEncode({'id': entry.id}),
-                      );
-
-                      if (response['status'] == 'success') {
-                          onDelete();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Invoice deleted successfully"))
-                          );
-                          // 3. Refresh halaman (panggil callback refresh yang ada di Parent)
-                          // Kamu bisa menggunakan Provider atau memanggil fungsi refreshPage()
-                      } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Failed to delete invoice"))
-                          );
-                      }
-                  }
-              }),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-
-          // Product Preview (Hanya menampilkan item pertama)
-          // --- GANTI BAGIAN "Product Preview" (Kotak Putih) DENGAN INI ---
-
-          // Kita gunakan Column untuk menampilkan semua item yang ada di list entry.items
-          Column(
-            children: entry.items.map((item) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12), // Jarak antar produk
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Gambar Produk
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        item.image,
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => Container(
-                          width: 70, height: 70, color: Colors.grey[300], 
-                          child: const Icon(Icons.broken_image, size: 20)
-                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Detail Produk
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text("Quantity: ${item.quantity}", 
-                              style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                          const SizedBox(height: 4),
-                          Text("Brand: ${item.brand}", 
-                              style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                          const SizedBox(height: 4),
-                          Text("Price: Rp${item.price}", 
-                              style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Subtotal: Rp${item.subtotal}", 
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87)
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+
+
+            const SizedBox(height: 20),
+
+            // Footer: Total & Status
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Total :", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text("Rp${entry.totalPrice}", 
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Status :", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(entry.status),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    entry.status,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              );
-            }).toList(),
-          ),
-
-
-          const SizedBox(height: 20),
-
-          // Footer: Total & Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Total :", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Text("Rp${entry.totalPrice}", 
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text("Status :", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(entry.status),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  entry.status,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+              ],
+            ),
+          ],
+        ),
+      )
     );
   }
 
@@ -516,6 +642,37 @@ class OrderCard extends StatelessWidget {
         ),
         child: Text(label, style: const TextStyle(fontSize: 12)),
       ),
+    );
+  }
+}
+
+class DashedLineSeparator extends StatelessWidget {
+  const DashedLineSeparator({super.key, this.height = 1, this.color = const Color(0xFF005F73)});
+  final double height;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final boxWidth = constraints.constrainWidth();
+        const dashWidth = 5.0;
+        final dashHeight = height;
+        final dashCount = (boxWidth / (2 * dashWidth)).floor();
+        return Flex(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          direction: Axis.horizontal,
+          children: List.generate(dashCount, (_) {
+            return SizedBox(
+              width: dashWidth,
+              height: dashHeight,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: color),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

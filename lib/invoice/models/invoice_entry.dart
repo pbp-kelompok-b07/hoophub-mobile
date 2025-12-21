@@ -37,6 +37,7 @@ class Invoice {
   String fullName;
   String address;
   String city;
+  String postalCode;
   int totalPrice;
   String status;
   List<Item> items;
@@ -48,6 +49,7 @@ class Invoice {
     required this.fullName,
     required this.address,
     required this.city,
+    required this.postalCode,
     required this.totalPrice,
     required this.status,
     required this.items,
@@ -57,9 +59,10 @@ class Invoice {
         id: json["id"]?.toString() ?? "",
         invoiceNo: json["invoice_no"] ?? "No Invoice",
         date: json["date"] ?? "",
-        fullName: json["fullName"] ?? "Guest",
+        fullName: json["full_name"] ?? "",
         address: json["address"] ?? "",
         city: json["city"] ?? "",
+        postalCode: json["postal_code"] ?? "",
         totalPrice: json["total_price"] ?? 0,
         status: json["status"] ?? "Pending",
         items: json["items"] == null 
@@ -74,6 +77,7 @@ class Invoice {
         "fullName": fullName,
         "address": address,
         "city": city,
+        "postalCode": postalCode,
         "totalPrice": totalPrice,
         "status": status,
         "items": List<dynamic>.from(items.map((x) => x.toJson())),

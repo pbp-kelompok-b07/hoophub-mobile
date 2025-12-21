@@ -62,4 +62,4 @@ Admin:
 - [Link Figma](https://www.figma.com/design/wwBBdlglDQBOCo9OM1RAQe/Untitled?node-id=0-1&t=M3sb6RFJ55DRoEJ1-1)
 
 ## Tautan APK
-- Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/7858bc68-0f9e-4923-8cf5-b45d9822f93c/installable-artifacts/f5e50b351fed838a/public-install-page/29ec7b0b4e5f6f4ccd4ce0ac2bff8eef)
+- Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/7858bc68-0f9e-4923-8cf5-b45d9822f93c/installable-artifacts/e2ec0db9fe8e73f8/public-install-page/2d4fcb2771198971ef89f0ec34d98bb4)

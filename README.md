@@ -63,3 +63,6 @@ Admin:
 
 ## Tautan APK
 - Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/7858bc68-0f9e-4923-8cf5-b45d9822f93c/installable-artifacts/e2ec0db9fe8e73f8/public-install-page/2d4fcb2771198971ef89f0ec34d98bb4)
+
+## Rekaman video
+- [Video](https://drive.google.com/drive/folders/1jUqAScppfO1-Xri4_sKAiZ9obeHhCVWl?usp=sharing)

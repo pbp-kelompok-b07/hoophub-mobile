@@ -12,6 +12,7 @@ import 'package:hoophub_mobile/screens/login.dart';
 import 'package:hoophub_mobile/catalog/screens/catalog_page.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
+import 'package:hoophub_mobile/wishlist/screens/wish_entry_list.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -45,7 +46,7 @@ class _MenuPageState extends State<MenuPage> {
         goToWishlistTab: _goToWishlistTab,
       ),
       const CatalogPage(),
-      const Center(child: Text("Wishlist Page", style: TextStyle(fontSize: 30))),
+      const WishEntryListPage(),
       CartPage(
         onShopNow: () => _onRegularItemTapped(1),
         onCheckoutSuccess: () => _onRegularItemTapped(4),

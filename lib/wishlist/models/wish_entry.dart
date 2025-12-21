@@ -6,7 +6,6 @@ List<WishEntry> wishEntryListFromJson(String str) {
   if (decoded is List) {
     return List<WishEntry>.from(decoded.map((x) => WishEntry.fromJson(Map<String, dynamic>.from(x))));
   }
-  // jika kadang endpoint mengembalikan single object
   return [WishEntry.fromJson(Map<String, dynamic>.from(decoded))];
 }
 
@@ -28,7 +27,6 @@ class WishEntry {
     required this.userId,
   });
 
-  // ---------- helpers ----------
   static int _toInt(dynamic value) {
     if (value == null) return 0;
     if (value is int) return value;
@@ -42,71 +40,111 @@ class WishEntry {
 
   static DateTime _parseDate(dynamic dateRaw) {
     if (dateRaw == null) return DateTime.now();
-    if (dateRaw is int) {
-      final val = dateRaw;
-      // deteksi seconds (10 digit) atau milliseconds (13+ digit)
-      if (val.abs() > 1000000000000) {
-        return DateTime.fromMillisecondsSinceEpoch(val);
-      } else {
-        return DateTime.fromMillisecondsSinceEpoch(val * 1000);
+    try {
+      if (dateRaw is int) {
+        if (dateRaw.abs() > 1000000000000) return DateTime.fromMillisecondsSinceEpoch(dateRaw);
+        return DateTime.fromMillisecondsSinceEpoch(dateRaw * 1000);
       }
-    }
-    if (dateRaw is String) {
-      final numeric = int.tryParse(dateRaw);
-      if (numeric != null) return _parseDate(numeric);
-      try {
-        return DateTime.parse(dateRaw);
-      } catch (_) {
-        return DateTime.now();
+      if (dateRaw is String) {
+        // Coba parsing standar dulu
+        try {
+          return DateTime.parse(dateRaw);
+        } catch (_) {
+           // Ignore
+        }
       }
-    }
+    } catch (_) {}
     return DateTime.now();
   }
 
-  // ---------- factory ----------
+  // --- LOGIC FIX URL ---
+  static String _fixUrl(String? url) {
+    if (url == null || url.isEmpty || url == 'None' || url == 'null') return '';
+    if (url.startsWith('http')) return url;
+    
+    const base = "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id";
+    String cleanUrl = url.trim();
+    if (!cleanUrl.startsWith('/')) cleanUrl = '/$cleanUrl';
+    
+    return "$base$cleanUrl";
+  }
+
   factory WishEntry.fromJson(Map<String, dynamic> json) {
-    // 1) nested product?
+    // -------------------------------------------------------------
+    // DEBUG: LIHAT APA ISI JSON DARI SERVER
+    // -------------------------------------------------------------
+    print("--------------------------------------------------");
+    print("DEBUG ITEM ID: ${json['id']}");
+    print("RAW JSON: $json");
+    // -------------------------------------------------------------
+
+    // 1) NESTED PRODUCT
     Product? nestedProduct;
     if (json['product'] != null && json['product'] is Map) {
-      nestedProduct = Product.fromJson(Map<String, dynamic>.from(json['product']));
+      var pMap = Map<String, dynamic>.from(json['product']);
+      
+      // Coba ambil gambar dari berbagai key yang mungkin ada di nested object
+      String? rawNestedImg = pMap['image'] ?? pMap['image_url'] ?? pMap['thumbnail'];
+      
+      // Fix URL
+      if (rawNestedImg != null) {
+         String fixed = _fixUrl(rawNestedImg);
+         pMap['image_url'] = fixed;
+         pMap['image'] = fixed; // Cadangan
+         print(">> Fixed Nested Image: $fixed"); // Debug print
+      }
+      
+      nestedProduct = Product.fromJson(pMap);
     }
 
-    // 2) detect product id
+    // 2) PARSE ID
     int pid = 0;
-    if (json.containsKey('product_id')) {
-      pid = _toInt(json['product_id']);
-    } else if (json.containsKey('productId')) {
-      pid = _toInt(json['productId']);
-    } else if (nestedProduct != null) {
-      pid = nestedProduct.id;
-    } else if (json['product'] is int) {
-      pid = _toInt(json['product']);
-    }
+    if (json.containsKey('product_id')) pid = _toInt(json['product_id']);
+    else if (nestedProduct != null) pid = nestedProduct.id;
+    else if (json['product'] is int) pid = _toInt(json['product']);
 
-    // 3) parse date_added (several possible keys)
-    final dateRaw = json['date_added'] ?? json['dateAdded'] ?? json['created_at'];
-    final dateAdded = _parseDate(dateRaw);
+    // 3) PARSE FIELDS LAIN
+    final dateAdded = _parseDate(json['date_added'] ?? json['dateAdded']);
+    final userId = _toInt(json['user_id'] ?? json['userId']);
 
-    // 4) parse user id
-    final userId = _toInt(json['user_id'] ?? json['userId'] ?? json['user']);
-
-    // 5) jika flattened fields ada, buat nestedProduct agar front-end dapat memakai Product
+    // 4) FLATTENED PRODUCT (Biasanya dari show_json)
     if (nestedProduct == null) {
       final Map<String, dynamic> flattened = {};
 
       if (json.containsKey('product_name')) flattened['name'] = json['product_name'];
       if (json.containsKey('product_brand')) flattened['brand'] = json['product_brand'];
       if (json.containsKey('product_price')) flattened['price'] = json['product_price'];
-      if (json.containsKey('product_id')) flattened['id'] = json['product_id'];
+      flattened['id'] = pid; // Gunakan PID yang sudah diparse
+      
+      // --- DETEKSI GAMBAR ---
+      // Cek semua kemungkinan key yang mungkin dikirim Django
+      String? rawImg = json['image_url'] ??
+                      json['image'] ??
+                      json['product_image'] ??
+                      json['product_thumbnail'] ??
+                      json['thumbnail'];
 
-      // banyak kemungkinan nama untuk image -> map ke key yang Product.fromJson mengharapkan (image_url)
-      if (json.containsKey('product_thumbnail')) flattened['image_url'] = json['product_thumbnail'];
-      if (json.containsKey('product_image')) flattened['image_url'] = flattened['image_url'] ?? json['product_image'];
-      if (json.containsKey('image')) flattened['image_url'] = flattened['image_url'] ?? json['image'];
-      if (json.containsKey('image_url')) flattened['image_url'] = flattened['image_url'] ?? json['image_url'];
+      if (rawImg != null) {
+        final r = rawImg.toString().trim();
+        if (r.isNotEmpty && r.toLowerCase() != 'null' && r.toLowerCase() != 'none') {
+          final fixedUrl = _fixUrl(r);
+          flattened['image_url'] = fixedUrl;
+          flattened['image'] = fixedUrl;
+          print(">> Resulting URL: $fixedUrl");
+        } else {
+          print(">> HASIL: Image dianggap NULL oleh Flutter (string kosong/null)");
+        }
+      } else {
+        print(">> HASIL: Image dianggap NULL oleh Flutter (key tidak ada)");
+      }
 
-      if (flattened.isNotEmpty) {
-        nestedProduct = Product.fromJson(flattened);
+      // Buat Product Dummy jika ada Nama
+      if (flattened.containsKey('name')) {
+         if (!flattened.containsKey('description')) flattened['description'] = '';
+         if (!flattened.containsKey('category')) flattened['category'] = '';
+         if (!flattened.containsKey('stock')) flattened['stock'] = 0;
+         
+         nestedProduct = Product.fromJson(flattened); 
       }
     }
 
@@ -119,7 +157,6 @@ class WishEntry {
     );
   }
 
-  // ---------- serialisasi ----------
   Map<String, dynamic> toJson() => {
         'id': id,
         'product_id': productId,
@@ -127,8 +164,5 @@ class WishEntry {
         'user_id': userId,
       };
 
-  /// payload minimal untuk membuat wishlist di server
-  Map<String, dynamic> toCreateJson() => {
-        'product_id': productId,
-      };
+  Map<String, dynamic> toCreateJson() => {'product_id': productId};
 }

@@ -25,9 +25,13 @@ class WishEntryCard extends StatelessWidget {
 
   // Helper URL Gambar
   String _fixImageUrl(String? url) {
-    if (url == null || url.isEmpty) return '';
+    if (url == null) return '';
+    url = url.trim();
+    if (url.isEmpty) return '';
     if (url.startsWith('http')) return url;
-    return "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id$url"; 
+    const base = "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id";
+    if (url.startsWith('/')) return base + url;
+    return '$base/$url'; // tambahkan slash jika belum ada
   }
 
   @override

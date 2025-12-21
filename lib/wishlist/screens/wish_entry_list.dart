@@ -5,7 +5,6 @@ import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/wishlist/models/wish_entry.dart';
 import 'package:hoophub_mobile/wishlist/widgets/wish_entry_card.dart';
-import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
 
 class WishEntryListPage extends StatefulWidget {
   final List<WishEntry>? initialEntries;
@@ -198,34 +197,52 @@ class _WishEntryListPageState extends State<WishEntryListPage> {
     }
   }
 
-  // 4. LOGIKA ADD TO CART
+  // 4. LOGIKA ADD TO CART (Disamakan dengan Catalog Page)
   Future<void> _handleAddToCart(WishEntry entry) async {
     if (entry.product == null) return;
     
     final request = context.read<CookieRequest>();
+    // Set loading indicator khusus untuk item ini
     setState(() => _processingAddProductId = entry.product!.id);
 
     try {
-      final response = await request.postJson(
-        '$baseUrl/cart/add-flutter/', 
-        jsonEncode({'product_id': entry.product!.id}),
+      // Menggunakan pola URL yang sama dengan Catalog Page
+      // Endpoint: /cart/add-flutter/<product_id>/
+      final response = await request.post(
+        '$baseUrl/cart/add-flutter/${entry.product!.id}/', 
+        {}, // Body kosong karena ID ada di URL
       );
 
-      if (response['status'] == 'success' || response['message'] != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Added to cart!')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to add to cart')),
-        );
+      if (mounted) {
+        if (response['status'] == 'success') {
+          // SUKSES: Tampilkan SnackBar Hijau & Tetap di halaman
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Berhasil ditambahkan ke keranjang"),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          // GAGAL (Logic dari server): Tampilkan SnackBar Merah
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? "Gagal menambahkan"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-      // Seringkali cart endpoint error jika belum diimplementasi, kita abaikan UI errornya
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request sent to cart endpoint.')),
-      );
+      // ERROR JARINGAN / LAINNYA
+      print("Error add to cart: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Terjadi kesalahan: $e")),
+        );
+      }
     } finally {
+      // Matikan loading indicator
       if (mounted) setState(() => _processingAddProductId = null);
     }
   }

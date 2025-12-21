@@ -1,7 +1,8 @@
+import 'dart:convert'; // Tambahkan ini untuk jsonEncode
 import 'package:flutter/material.dart';
 import 'package:hoophub_mobile/catalog/models/product.dart';
 import 'package:hoophub_mobile/catalog/screens/add_product_page.dart';
-import 'package:hoophub_mobile/catalog/screens/edit_product_page.dart'; 
+import 'package:hoophub_mobile/catalog/screens/edit_product_page.dart';
 import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:provider/provider.dart';
@@ -71,6 +72,61 @@ class _CatalogPageState extends State<CatalogPage> {
         );
       }
     }
+  }
+
+  // === FUNGSI DELETE PRODUK (BARU) ===
+  void _deleteProduct(CookieRequest request, Product p) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Hapus Produk"),
+          content: Text("Apakah Anda yakin ingin menghapus '${p.name}'?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Tutup dialog
+              },
+              child: const Text("Batal"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Tutup dialog
+
+                // Kirim request delete
+                final response = await request.postJson(
+                  "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/catalog/delete-flutter/${p.id}/",
+                  jsonEncode({}),
+                );
+
+                if (mounted) {
+                  if (response['status'] == 'success') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Produk berhasil dihapus!"),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    // Refresh daftar produk
+                    setState(() {
+                      _futureProducts = _fetchProducts();
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(response['message'] ?? "Gagal menghapus"),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -278,7 +334,7 @@ class _CatalogPageState extends State<CatalogPage> {
                                         fontSize: 11, color: Colors.grey),
                                   ),
 
-                                  // === Bagian Admin (Edit Button - DIPERBAIKI) ===
+                                  // === Bagian Admin (Edit & Delete Button) ===
                                   if (isAdmin) ...[
                                     const SizedBox(height: 8),
                                     Container(
@@ -300,30 +356,54 @@ class _CatalogPageState extends State<CatalogPage> {
                                                 fontWeight: FontWeight.bold,
                                                 color: Color(0xFF1565C0)),
                                           ),
-                                          InkWell(
-                                            onTap: () async {
-                                              await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      EditProductPage(
-                                                    product: p,
+                                          // Row untuk Edit dan Delete
+                                          Row(
+                                            children: [
+                                              // Tombol Edit
+                                              InkWell(
+                                                onTap: () async {
+                                                  final refreshed =
+                                                      await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (_) =>
+                                                          EditProductPage(
+                                                        product: p,
+                                                      ),
+                                                    ),
+                                                  );
+                                                  if (refreshed == true) {
+                                                    setState(() {
+                                                      _futureProducts =
+                                                          _fetchProducts();
+                                                    });
+                                                  }
+                                                },
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(4.0),
+                                                  child: Icon(
+                                                    Icons.edit,
+                                                    size: 18,
+                                                    color: Color(0xFF1565C0),
                                                   ),
                                                 ),
-                                              );
-                                              setState(() {
-                                                _futureProducts =
-                                                    _fetchProducts();
-                                              });
-                                            },
-                                            child: const Padding(
-                                              padding: EdgeInsets.all(4.0),
-                                              child: Icon(
-                                                Icons.edit,
-                                                size: 16,
-                                                color: Color(0xFF1565C0),
                                               ),
-                                            ),
+                                              const SizedBox(width: 8),
+                                              // Tombol Delete
+                                              InkWell(
+                                                onTap: () {
+                                                  _deleteProduct(request, p);
+                                                },
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(4.0),
+                                                  child: Icon(
+                                                    Icons.delete,
+                                                    size: 18,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           )
                                         ],
                                       ),

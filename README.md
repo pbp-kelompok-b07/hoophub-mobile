@@ -1,4 +1,5 @@
 # hoophub
+[![Build Status](https://app.bitrise.io/app/7858bc68-0f9e-4923-8cf5-b45d9822f93c/status.svg?token=F5arNE8L4osL-aOvhCI59Q&branch=master)](https://app.bitrise.io/app/7858bc68-0f9e-4923-8cf5-b45d9822f93c)
 
 ## Nama Anggota Kelompok
 - Rivaldy Putra Rivly (2406351453)
@@ -42,12 +43,8 @@ Invoice
 
 ## Sumber Initial Dataset
 - https://docs.google.com/spreadsheets/d/116yGaRjewufSu_6dCSuxHHOd2ouape10tNWU2QdtcAU/edit?usp=drivesdk 
-- Dataset diperoleh dengan metode scraping dari website Nike, adidas, Spalding, Wilson, dan TARMAK.
 
 ## Peran Pengguna
-Guest (tidak login):
-- Guest dapat browsing katalog, melihat detail produk, menggunakan filter, serta melihat review yang ada.
-
 User:
 - User dapat menambahkan produk ke keranjang, melakukan checkout, serta menulis ulasan dan rating.
 
@@ -64,3 +61,5 @@ Admin:
 ## Link Design
 - https://www.figma.com/design/wwBBdlglDQBOCo9OM1RAQe/Untitled?node-id=0-1&t=M3sb6RFJ55DRoEJ1-1 
 
+## Tautan APK
+- Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/7858bc68-0f9e-4923-8cf5-b45d9822f93c/installable-artifacts/5f36ba2f410d2cf4/public-install-page/7ea474982d59fc4b7ce53594ca2941fe)

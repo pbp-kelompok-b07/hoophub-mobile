@@ -63,7 +63,9 @@ class Invoice {
         address: json["address"] ?? "",
         city: json["city"] ?? "",
         postalCode: json["postal_code"] ?? "",
-        totalPrice: json["total_price"] ?? 0,
+        totalPrice: (json["total_price"] is double) 
+          ? (json["total_price"] as double).toInt() 
+          : (json["total_price"] ?? 0),
         status: json["status"] ?? "Pending",
         items: json["items"] == null 
             ? [] 
@@ -104,14 +106,14 @@ class Item {
   });
 
   factory Item.fromJson(Map<String, dynamic> json) => Item(
-        productId: json["productId"] ?? json["product_id"] ?? 0,
-        name: json["name"] ?? "Unknown Product",
-        brand: json["brand"] ?? "",
-        price: json["price"] ?? 0,
-        quantity: json["quantity"] ?? 0,
-        subtotal: json["subtotal"] ?? 0,
-        image: json["image"] ?? "",
-      );
+      productId: json["productId"] ?? json["product_id"] ?? 0,
+      name: json["name"]?.toString() ?? "Unknown Product",
+      brand: json["brand"]?.toString() ?? "",
+      price: (json["price"] as num?)?.toInt() ?? 0,
+      quantity: (json["quantity"] as num?)?.toInt() ?? 0,
+      subtotal: (json["subtotal"] as num?)?.toInt() ?? 0,
+      image: json["image"]?.toString() ?? "",
+    );
 
   Map<String, dynamic> toJson() => {
         "productId": productId,

@@ -373,7 +373,7 @@ class _DashboardContent extends StatelessWidget {
                 children: [
                   // 1. Gambar Latar Belakang (Paling Bawah)
                   Image.asset(
-                    "images/main-page.jpg",
+                    "assets/images/main-page.jpg",
                     width: double.infinity,
                     height: 350,
                     fit: BoxFit.cover,

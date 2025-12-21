@@ -42,7 +42,7 @@ Invoice
 - Pada modul ini, setelah pengguna membeli suatu produk, akan otomatis membuat suatu invoice yang memuat nama produk, jumlah produk, harga produk, dan alamat (opsional).
 
 ## Sumber Initial Dataset
-- https://docs.google.com/spreadsheets/d/116yGaRjewufSu_6dCSuxHHOd2ouape10tNWU2QdtcAU/edit?usp=drivesdk 
+- [Link Dataset](https://docs.google.com/spreadsheets/d/116yGaRjewufSu_6dCSuxHHOd2ouape10tNWU2QdtcAU/edit?usp=drivesdk)
 
 ## Peran Pengguna
 User:
@@ -59,7 +59,7 @@ Admin:
 4. Mengimplementasikan class Catalog pada Flutter dengan memanfaatkan API dataset yang telah dibuat dan dapat diakses di `https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/`, serta memanfaatkan `https://app.quicktype.io/` untuk mengubah data JSON menjadi objek Dart yang akan digunakan untuk membentuk class Catalog di Flutter.
 
 ## Link Design
-- https://www.figma.com/design/wwBBdlglDQBOCo9OM1RAQe/Untitled?node-id=0-1&t=M3sb6RFJ55DRoEJ1-1 
+- [Link Figma](https://www.figma.com/design/wwBBdlglDQBOCo9OM1RAQe/Untitled?node-id=0-1&t=M3sb6RFJ55DRoEJ1-1)
 
 ## Tautan APK
-- Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/7858bc68-0f9e-4923-8cf5-b45d9822f93c/installable-artifacts/d75fb9dfd5f0c947/public-install-page/fcd92472f32117e545b663d1888ae443)
+- Download aplikasi versi terbaru: [Download APK](https://app.bitrise.io/app/7858bc68-0f9e-4923-8cf5-b45d9822f93c/installable-artifacts/f5e50b351fed838a/public-install-page/29ec7b0b4e5f6f4ccd4ce0ac2bff8eef)

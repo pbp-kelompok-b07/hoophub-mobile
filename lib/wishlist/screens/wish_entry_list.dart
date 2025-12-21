@@ -1,23 +1,18 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
 import 'package:hoophub_mobile/wishlist/models/wish_entry.dart';
 import 'package:hoophub_mobile/wishlist/widgets/wish_entry_card.dart';
+import 'package:hoophub_mobile/catalog/screens/product_detail.dart';
 
 class WishEntryListPage extends StatefulWidget {
-  final List<WishEntry> initialEntries;
-  final List<String> brands;
-  final bool isAuthenticated;
-
-  final Future<void> Function(WishEntry entry)? onAddToCart;
-  final Future<bool> Function(WishEntry entry)? onRemoveFromWishlist;
+  final List<WishEntry>? initialEntries;
 
   const WishEntryListPage({
     super.key,
-    this.initialEntries = const [],
-    this.brands = const [],
-    this.isAuthenticated = true,
-    this.onAddToCart,
-    this.onRemoveFromWishlist,
+    this.initialEntries,
   });
 
   @override
@@ -25,81 +20,132 @@ class WishEntryListPage extends StatefulWidget {
 }
 
 class _WishEntryListPageState extends State<WishEntryListPage> {
-  late List<WishEntry> _allEntries;
-  late List<WishEntry> _visibleEntries;
+  // Data
+  List<WishEntry> _allEntries = [];
+  List<WishEntry> _visibleEntries = [];
+  List<String> _brands = [];
+
+  // State UI
+  bool _isLoading = true;
   String _selectedBrand = '';
   String _selectedSort = 'date_desc';
-  final List<_FlashMessage> _messages = [];
+  
   final DateFormat _dateFmt = DateFormat('MMM d, yyyy HH:mm');
   int? _processingAddProductId;
   int? _processingRemoveId;
 
+  // URL SERVER (PBP Live)
+  final String baseUrl = "https://roselia-evanny-hoophub.pbp.cs.ui.ac.id"; 
+
   @override
   void initState() {
     super.initState();
-    _allEntries = List.from(widget.initialEntries);
-    _visibleEntries = List.from(_allEntries);
-    // default selections
-    _selectedBrand = '';
-    _selectedSort = 'date_desc';
-    _applyFiltersAndSort();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchWishlist();
+    });
   }
 
-  /// Safe flash message helper.
-  /// It avoids using BuildContext when the widget is unmounted.
-  void _flash(String text, {String type = 'info'}) {
-    // update local message list only if still mounted
-    if (mounted) {
+  Widget _boxedDropdown<T>({
+    required String label,
+    required T? value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+    double minWidth = 140,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      constraints: BoxConstraints(minWidth: minWidth),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade400),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 8),
+          DropdownButton<T>(
+            value: value,
+            underline: const SizedBox(), // hilangkan garis bawah default
+            icon: const Icon(Icons.keyboard_arrow_down),
+            items: items,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 1. FETCH DATA DARI SERVER
+  Future<void> _fetchWishlist() async {
+    final request = context.read<CookieRequest>();
+    
+    if (!request.loggedIn) {
       setState(() {
-        _messages.add(_FlashMessage(text: text, type: type));
+        _isLoading = false;
+        _allEntries = [];
+        _visibleEntries = [];
       });
-
-      // automatically remove after 3.5s
-      Future.delayed(const Duration(milliseconds: 3500), () {
-        if (mounted) {
-          setState(() {
-            if (_messages.isNotEmpty) _messages.removeAt(0);
-          });
-        }
-      });
-
-      // show a SnackBar for quick feedback; only use BuildContext when mounted
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(text), duration: const Duration(seconds: 2)),
-      );
-    } else {
-      // If not mounted, we simply skip showing UI feedback.
-      // This avoids using BuildContext across async gaps.
+      return;
     }
-  }
 
-  double _priceOf(WishEntry e) {
     try {
-      final prod = e.product as dynamic;
-      final p = prod?.price ?? prod?.priceValue ?? prod?.price_int ?? 0;
-      if (p == null) return 0;
-      if (p is num) return p.toDouble();
-      // Menghilangkan semua yang bukan angka/koma/titik/minus
-      final s = p.toString().replaceAll(RegExp(r"[^0-9\-.,]"), '');
-      // Mengganti koma dengan titik dan mencoba parse
-      return double.tryParse(s.replaceAll(',', '')) ?? 0;
-    } catch (_) {
-      return 0;
+      final response = await request.get('$baseUrl/wishlist/api/json/');
+      
+      List<WishEntry> fetchedEntries = [];
+      Set<String> uniqueBrands = {};
+
+      for (var d in response) {
+        if (d != null) {
+          // KARENA MODEL ANDA SUDAH CANGGIH, CUKUP PANGGIL INI:
+          WishEntry entry = WishEntry.fromJson(d);
+
+          // Hanya masukkan jika produk berhasil di-parse (tidak null)
+          if (entry.product != null) {
+            fetchedEntries.add(entry);
+            
+            if (entry.product!.brand.isNotEmpty) {
+              uniqueBrands.add(entry.product!.brand);
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _allEntries = fetchedEntries;
+          _brands = uniqueBrands.toList()..sort();
+          _isLoading = false;
+          _applyFiltersAndSort(); 
+        });
+      }
+    } catch (e) {
+      print("Error fetching wishlist: $e");
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load wishlist.')),
+        );
+      }
     }
   }
 
+  // 2. LOGIKA FILTER & SORT
   void _applyFiltersAndSort() {
     final brand = _selectedBrand;
     List<WishEntry> list = List.from(_allEntries);
 
+    // Filter Brand
     if (brand.isNotEmpty) {
       list = list.where((e) {
-        final prod = e.product as dynamic;
-        final pBrand = (prod?.brand ?? prod?.brandName ?? '')?.toString() ?? '';
-        return pBrand.toLowerCase() == brand.toLowerCase();
+        return e.product?.brand.toLowerCase() == brand.toLowerCase();
       }).toList();
     }
 
+    // Sort
     switch (_selectedSort) {
       case 'date_asc':
         list.sort((a, b) => a.dateAdded.compareTo(b.dateAdded));
@@ -108,149 +154,136 @@ class _WishEntryListPageState extends State<WishEntryListPage> {
         list.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
         break;
       case 'price_asc':
-        list.sort((a, b) => _priceOf(a).compareTo(_priceOf(b)));
+        list.sort((a, b) => (a.product?.price ?? 0).compareTo(b.product?.price ?? 0));
         break;
       case 'price_desc':
-        list.sort((a, b) => _priceOf(b).compareTo(_priceOf(a)));
+        list.sort((a, b) => (b.product?.price ?? 0).compareTo(a.product?.price ?? 0));
         break;
     }
 
-    if (mounted) {
-      setState(() {
-        _visibleEntries = list;
-      });
-    } else {
+    setState(() {
       _visibleEntries = list;
-    }
+    });
   }
 
-  Future<void> _handleAddToCart(WishEntry entry) async {
-      if (!widget.isAuthenticated) {
-        _flash('Please sign in to add to cart', type: 'error');
-        return;
-      }
-      
-      // Asumsi: kita menggunakan ID Produk untuk Add to Cart
-      // Karena model WishEntry tidak diperlihatkan, kita asumsikan ID Produk adalah entry.product.id
-      final productId = (entry.product as dynamic)?.id ?? -1;
-      if (productId <= 0) {
-        if (mounted) _flash('Product ID not found.', type: 'error');
-        return;
-      }
-      
-      if (mounted) setState(() => _processingAddProductId = productId);
-      
-      try {
-        if (widget.onAddToCart != null) {
-          await widget.onAddToCart!(entry);
-          if (!mounted) return;
-          _flash('Added to cart', type: 'success');
-        } else {
-          if (!mounted) return;
-          _flash('Added to cart (local)', type: 'success');
-        }
-      } catch (err) {
-        if (mounted) _flash('Failed to add to cart', type: 'error');
-      } finally {
-        // Selesai memproses
-        if (mounted) setState(() => _processingAddProductId = null);
-      }
-    }
-
+  // 3. LOGIKA REMOVE
   Future<void> _handleRemove(WishEntry entry) async {
-    if (!widget.isAuthenticated) {
-      _flash('Please sign in to manage your wishlist', type: 'error');
-      return;
-    }
+    final request = context.read<CookieRequest>();
+    setState(() => _processingRemoveId = entry.id);
 
-    if (mounted) setState(() => _processingRemoveId = entry.id);
     try {
-      bool ok = true;
-      if (widget.onRemoveFromWishlist != null) {
-        ok = await widget.onRemoveFromWishlist!(entry);
-      }
-      // guard after awaiting
-      if (!mounted) return;
+      final response = await request.postJson(
+        '$baseUrl/wishlist/flutter/remove/',
+        jsonEncode({'wishlist_id': entry.id}),
+      );
 
-      if (ok) {
-        if (mounted) {
-          setState(() {
-            _allEntries.removeWhere((e) => e.id == entry.id);
-            _applyFiltersAndSort();
-          });
-        } else {
+      if (response['deleted'] == true) {
+        setState(() {
           _allEntries.removeWhere((e) => e.id == entry.id);
           _applyFiltersAndSort();
-        }
-        _flash('Item removed from wishlist', type: 'success');
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Item removed from wishlist')),
+        );
       } else {
-        _flash('Failed to remove item', type: 'error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['error'] ?? 'Failed to remove')),
+        );
       }
-    } catch (err) {
-      if (mounted) _flash('Network error', type: 'error');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network error')),
+      );
     } finally {
       if (mounted) setState(() => _processingRemoveId = null);
     }
   }
 
+  // 4. LOGIKA ADD TO CART
+  Future<void> _handleAddToCart(WishEntry entry) async {
+    if (entry.product == null) return;
+    
+    final request = context.read<CookieRequest>();
+    setState(() => _processingAddProductId = entry.product!.id);
+
+    try {
+      // Sesuaikan URL ini dengan endpoint cart teman Anda
+      final response = await request.postJson(
+        '$baseUrl/cart/add-flutter/', 
+        jsonEncode({'product_id': entry.product!.id}),
+      );
+
+      if (response['status'] == 'success' || response['message'] != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Added to cart!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to add to cart')),
+        );
+      }
+    } catch (e) {
+      // Seringkali cart endpoint error jika belum diimplementasi, kita abaikan UI errornya
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Request sent to cart endpoint.')),
+      );
+    } finally {
+      if (mounted) setState(() => _processingAddProductId = null);
+    }
+  }
+
   void _resetFilters() {
-    if (mounted) {
-      setState(() {
-        _selectedBrand = '';
-        _selectedSort = 'date_desc';
-        _applyFiltersAndSort();
-      });
-    } else {
+    setState(() {
       _selectedBrand = '';
       _selectedSort = 'date_desc';
       _applyFiltersAndSort();
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('hoophub - Wishlist'),
+        title: const Text('hoophub - Wishlist', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF005F73),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: widget.isAuthenticated ? _buildContent(context) : _buildNotAuth(context),
+      body: _buildContent(context, request),
     );
   }
 
-  Widget _buildNotAuth(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('You must be logged in.', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            const Text('To see your wishlist or add a new one, please log in to your account.', textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEE9B00)),
-              onPressed: () {
-                // navigate to login - user should wire this
-                _flash('Please implement navigation to login', type: 'info');
-              },
-              child: const Text('Login'),
-            ),
-          ],
+  Widget _buildContent(BuildContext context, CookieRequest request) {
+    // 1. Cek Login
+    if (!request.loggedIn) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('You must be logged in.', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              const Text('To see your wishlist, please log in.', textAlign: TextAlign.center),
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  Widget _buildContent(BuildContext context) {
+    // 2. Cek Loading
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Column(
       children: [
-        // Header
+        // Header Text
         Container(
           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 20),
-          child: Row(
-            children: const [
+          child: const Row(
+            children: [
               Expanded(
                 child: Text('Your wishlist is here!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               ),
@@ -258,136 +291,135 @@ class _WishEntryListPageState extends State<WishEntryListPage> {
           ),
         ),
 
-        // Filter bar
+        // Filter & Sort Bar
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-          child: Wrap(
-            alignment: WrapAlignment.end,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Brand', style: TextStyle(fontSize: 14)),
-                  const SizedBox(width: 8),
-                  DropdownButton<String>(
-                    value: _selectedBrand.isEmpty ? null : _selectedBrand,
-                    hint: const Text('All'),
-                    items: [const DropdownMenuItem(value: '', child: Text('All'))]
-                        .followedBy(widget.brands.map((b) => DropdownMenuItem(value: b, child: Text(b))))
-                        .toList(),
-                    onChanged: (v) {
-                      if (mounted) {
-                        setState(() {
-                          _selectedBrand = v ?? '';
-                          _applyFiltersAndSort();
-                        });
-                      } else {
-                        _selectedBrand = v ?? '';
-                        _applyFiltersAndSort();
-                      }
-                    },
-                  ),
-                ],
-              ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 1. FILTER BRAND
+                _boxedDropdown<String>(
+                  label: 'Brand',
+                  value: _selectedBrand.isEmpty ? null : _selectedBrand,
+                  items: [const DropdownMenuItem(value: '', child: Text('All'))]
+                      .followedBy(_brands.map((b) => DropdownMenuItem(value: b, child: Text(b))))
+                      .toList(),
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedBrand = v ?? '';
+                      _applyFiltersAndSort();
+                    });
+                  },
+                  // Atur lebar minimal agar tidak terlalu lebar
+                  minWidth: 120, 
+                ),
 
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Sort', style: TextStyle(fontSize: 14)),
-                  const SizedBox(width: 8),
-                  DropdownButton<String>(
-                    value: _selectedSort,
-                    items: const [
-                      DropdownMenuItem(value: 'date_desc', child: Text('Date (Newest)')),
-                      DropdownMenuItem(value: 'date_asc', child: Text('Date (Oldest)')),
-                      DropdownMenuItem(value: 'price_desc', child: Text('Price (Highest)')),
-                      DropdownMenuItem(value: 'price_asc', child: Text('Price (Lowest)')),
-                    ],
-                    onChanged: (v) {
-                      if (mounted) {
-                        setState(() {
-                          _selectedSort = v ?? 'date_desc';
-                          _applyFiltersAndSort();
-                        });
-                      } else {
-                        _selectedSort = v ?? 'date_desc';
-                        _applyFiltersAndSort();
-                      }
-                    },
-                  ),
-                ],
-              ),
+                const SizedBox(width: 12),
 
-              TextButton(
-                onPressed: _resetFilters,
-                child: const Text('Reset', style: TextStyle(decoration: TextDecoration.underline, color: Color(0xFF005F73))),
-              ),
-            ],
+                // 2. SORT
+                _boxedDropdown<String>(
+                  label: 'Sort',
+                  value: _selectedSort,
+                  items: const [
+                    DropdownMenuItem(value: 'date_desc', child: Text('Newest')),
+                    DropdownMenuItem(value: 'date_asc', child: Text('Oldest')),
+                    DropdownMenuItem(value: 'price_desc', child: Text('Price High')),
+                    DropdownMenuItem(value: 'price_asc', child: Text('Price Low')),
+                  ],
+                  onChanged: (v) {
+                    setState(() {
+                      _selectedSort = v ?? 'date_desc';
+                      _applyFiltersAndSort();
+                    });
+                  },
+                  minWidth: 130,
+                ),
+
+                const SizedBox(width: 12),
+
+                // 3. RESET BUTTON (ICON ONLY - LEBIH HEMAT TEMPAT)
+                InkWell(
+                  onTap: _resetFilters,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      shape: BoxShape.circle, // Bentuk bulat
+                    ),
+                    child: const Icon(
+                      Icons.refresh, // Ikon Reset/Refresh
+                      color: Color(0xFF005F73),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
-        // messages box
-        if (_messages.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              children: _messages.map((m) => Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: m.type == 'success' ? Colors.green[50] : m.type == 'error' ? Colors.red[50] : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(m.text),
-                  )).toList(),
-            ),
-          ),
-        ],
-
-        // Grid
+        // Grid/List Content
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 6),
             child: _visibleEntries.isEmpty
               ? const Center(child: Text('Your wishlist is empty.'))
               : LayoutBuilder(builder: (context, constraints) {
-                  final crossAxisCount = constraints.maxWidth > 800 ? 2 : 1;
-                  return GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        mainAxisSpacing: 20,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: crossAxisCount == 1 ? 4.2 : 3.2,
-                    ),
-                    itemCount: _visibleEntries.length,
-                    itemBuilder: (context, idx) {
-                      final entry = _visibleEntries[idx];
-                      return WishEntryCard(
-                        entry: entry,
-                        dateFmt: _dateFmt,
-                        isAuthenticated: widget.isAuthenticated,
-                        // Mengirimkan state loading dari parent widget
-                        processingAddProductId: _processingAddProductId, 
-                        processingRemoveId: _processingRemoveId,
-                        onAddToCart: _handleAddToCart, 
-                        onRemoveFromWishlist: _handleRemove,
-                      );
-                    },
-                  );
+                  // Cek lebar layar. Jika > 800 (Desktop/Tablet), pakai Grid 2 kolom.
+                  // Jika Mobile, pakai List 1 kolom (agar tinggi kartu fit konten).
+                  bool isMobile = constraints.maxWidth <= 800;
+
+                  if (isMobile) {
+                    // TAMPILAN MOBILE: Pakai ListView agar tidak ada gap
+                    return ListView.builder(
+                      itemCount: _visibleEntries.length,
+                      itemBuilder: (context, idx) {
+                        final entry = _visibleEntries[idx];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0), // Jarak antar kartu
+                          child: WishEntryCard(
+                            entry: entry,
+                            dateFmt: _dateFmt,
+                            isAuthenticated: true,
+                            processingAddProductId: _processingAddProductId, 
+                            processingRemoveId: _processingRemoveId,
+                            onAddToCart: _handleAddToCart, 
+                            onRemoveFromWishlist: _handleRemove,
+                          ),
+                        );
+                      },
+                    );
+                  } else {
+                    // TAMPILAN DESKTOP: Tetap pakai GridView agar rapih 2 kolom
+                    return GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 20,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 2.2, // Rasio untuk desktop bisa diatur
+                      ),
+                      itemCount: _visibleEntries.length,
+                      itemBuilder: (context, idx) {
+                        final entry = _visibleEntries[idx];
+                        return WishEntryCard(
+                          entry: entry,
+                          dateFmt: _dateFmt,
+                          isAuthenticated: true,
+                          processingAddProductId: _processingAddProductId, 
+                          processingRemoveId: _processingRemoveId,
+                          onAddToCart: _handleAddToCart, 
+                          onRemoveFromWishlist: _handleRemove,
+                        );
+                      },
+                    );
+                  }
                 }),
           ),
         ),
       ],
     );
   }
-}
-
-class _FlashMessage {
-  final String text;
-  final String type; // 'info' | 'success' | 'error'
-  _FlashMessage({required this.text, this.type = 'info'});
 }

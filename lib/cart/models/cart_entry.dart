@@ -26,6 +26,7 @@ class CartEntry {
 
 class CartEntryFields {
     String productName;
+    String brand;
     int price;
     int quantity;
     int subtotal;
@@ -33,6 +34,7 @@ class CartEntryFields {
 
     CartEntryFields({
         required this.productName,
+        required this.brand,
         required this.price,
         required this.quantity,
         required this.subtotal,
@@ -41,6 +43,8 @@ class CartEntryFields {
 
     factory CartEntryFields.fromJson(Map<String, dynamic> json) => CartEntryFields(
         productName: json["product_name"],
+
+        brand: json["brand"],
         
         price: json["price"] is int ? json["price"] : int.parse(json["price"].toString()), 
         
@@ -53,6 +57,7 @@ class CartEntryFields {
 
     Map<String, dynamic> toJson() => {
         "product_name": productName,
+        "brand": brand,
         "price": price,
         "quantity": quantity,
         "subtotal": subtotal,

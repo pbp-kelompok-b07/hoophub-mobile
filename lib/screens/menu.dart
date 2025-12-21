@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hoophub_mobile/cart/screens/cart_page.dart';
+import 'package:hoophub_mobile/invoice/screens/invoice_list_page.dart';
 import 'package:hoophub_mobile/review/screens/review_entry_list.dart';
 import 'package:hoophub_mobile/report/screens/report_entry_list.dart';
 import 'package:http/http.dart';
@@ -45,8 +46,13 @@ class _MenuPageState extends State<MenuPage> {
       ),
       const CatalogPage(),
       const Center(child: Text("Wishlist Page", style: TextStyle(fontSize: 30))),
-      const CartPage(),
-      const Center(child: Text("Invoice Page", style: TextStyle(fontSize: 30))),
+      CartPage(
+        onShopNow: () => _onRegularItemTapped(1),
+        onCheckoutSuccess: () => _onRegularItemTapped(4),
+      ),
+      InvoiceListPage(
+        onReorder: () => _onRegularItemTapped(3)
+      ),
       const ReviewEntryListPage(),
       const ReportEntryListPage(),
     ];

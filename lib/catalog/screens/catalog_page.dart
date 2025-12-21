@@ -290,7 +290,8 @@ class _CatalogPageState extends State<CatalogPage> {
                                                 context,
                                                 MaterialPageRoute(
                                                   builder: (_) => EditProductPage(
-                                                    product: p,                                                  ),
+                                                    product: p,                                                  
+                                                  ),
                                                 ),
                                               );
                                             },

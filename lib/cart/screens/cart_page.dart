@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:hoophub_mobile/screens/menu.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 import 'package:hoophub_mobile/cart/models/cart_entry.dart';
@@ -6,7 +9,10 @@ import 'package:hoophub_mobile/cart/widgets/cart_item_card.dart';
 import 'package:hoophub_mobile/catalog/screens/catalog_page.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({super.key});
+  final VoidCallback? onShopNow;
+  final VoidCallback? onCheckoutSuccess;
+
+  const CartPage({super.key, this.onShopNow, this.onCheckoutSuccess});
 
   @override
   State<CartPage> createState() => _CartPageState();
@@ -41,7 +47,6 @@ class _CartPageState extends State<CartPage> {
         }
         return listItems;
       } else {
-        // Jika response bukan list (misal: {"status": "error"}), return kosong
         return [];
       }
     } catch (e) {
@@ -57,7 +62,8 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
-  void _showCheckoutModal(BuildContext context, CookieRequest request) {
+  // Tambahkan parameter cartItems dan totalPrice
+  void _showCheckoutModal(BuildContext context, CookieRequest request, List<CartEntry> cartItems, double totalPrice) {
     final GlobalKey<FormState> formKey = GlobalKey<FormState>();
     String fullName = "";
     String address = "";
@@ -112,24 +118,41 @@ class _CartPageState extends State<CartPage> {
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
                   formKey.currentState!.save();
-                  
+
+                  // --- BAGIAN PEMETAAN DATA ITEM ---
+                  // Ubah List<CartEntry> menjadi List of Map agar bisa dikirim sebagai JSON
+                  List<Map<String, dynamic>> itemsList = cartItems.map((item) {
+                    return {// Sesuaikan field di CartEntry kamu
+                      "id": item.pk,
+                      "quantity": item.fields.quantity,
+                      "subtotal": item.fields.subtotal,
+                    };
+                  }).toList();
+
+                  // Kirim semua data (Form + Items) ke Django
                   final response = await request.post(
-                    'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/cart/checkout-flutter/',
-                    {
-                      'full_name': fullName,
+                    'https://roselia-evanny-hoophub.pbp.cs.ui.ac.id/invoice/create-flutter/',
+                    jsonEncode({
+                      'fullName': fullName,
                       'address': address,
                       'city': city,
-                      'postal_code': postalCode,
-                    },
+                      'postalCode': postalCode,
+                      'totalPrice': totalPrice.toInt(),
+                      'items': itemsList, // Data list barang masuk ke sini
+                    }),
                   );
 
                   if (context.mounted) {
                     if (response['status'] == 'success') {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Checkout Berhasil!")));
-                      refreshPage();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Checkout Berhasil!"))
+                      );
+                      widget.onCheckoutSuccess?.call();
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? "Gagal Checkout")));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(response['message'] ?? "Gagal Checkout"))
+                      );
                     }
                   }
                 }
@@ -173,9 +196,7 @@ class _CartPageState extends State<CartPage> {
                       const Text('Your cart is empty.', style: TextStyle(fontSize: 16, color: Colors.grey)),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () => Navigator.pushReplacement(context,
-                          MaterialPageRoute(builder: (_) => const CatalogPage()),
-                        ),
+                        onPressed: widget.onShopNow,
                         style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
                         child: const Text("Shop Now", style: TextStyle(color: Colors.white)),
                       )
@@ -249,7 +270,7 @@ class _CartPageState extends State<CartPage> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () => _showCheckoutModal(context, request),
+                            onPressed: () => _showCheckoutModal(context, request, cartItems, totalPrice),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColor,
                               padding: const EdgeInsets.symmetric(vertical: 16),

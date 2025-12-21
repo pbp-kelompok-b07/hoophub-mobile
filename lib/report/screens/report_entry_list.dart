@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hoophub_mobile/report/screens/report_create_page.dart';
 import 'package:provider/provider.dart';
 import 'package:pbp_django_auth/pbp_django_auth.dart';
 
@@ -105,7 +106,17 @@ class _ReportEntryListPageState extends State<ReportEntryListPage> {
           }
           
           if (!snapshot.hasData || snapshot.data!['reports'].isEmpty) {
-            return const Center(child: Text("Tidak ada data report."));
+            return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    const Text('No report yet.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              );
           } 
 
           final bool isAdmin = snapshot.data!['isAdmin'];
